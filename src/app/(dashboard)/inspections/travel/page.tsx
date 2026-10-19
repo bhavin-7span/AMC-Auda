@@ -71,7 +71,17 @@ export default async function TravelPage({
                 <Widget title="Distance travelled" value={`${(report.distance_m / 1000).toFixed(2)} km`} />
                 <Widget title="Location points" value={report.count} />
               </div>
-              <MapContainer label={`Route — ${report.count} points`} height={320} />
+              <MapContainer
+                label={`Route — ${report.count} points`}
+                height={360}
+                route
+                points={report.points.map((p, i) => ({
+                  id: String(i),
+                  lat: p.lat,
+                  lon: p.lon,
+                  label: new Date(p.at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+                }))}
+              />
             </div>
           )}
         </>

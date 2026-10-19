@@ -5,10 +5,12 @@ import {
   getInspectionDetail,
   getManagerActions,
   getAssignableStaff,
+  signEvidenceUrls,
   type ManagerAction,
   type AssignableStaff,
 } from '@/lib/data/inspections';
 import { MapContainer } from '@/components/ui/MapContainer';
+import type { MapPoint } from '@/components/ui/map-types';
 import { InspectionActions } from './InspectionActions';
 
 function fmt(ts: string | null | undefined): string {
@@ -47,6 +49,26 @@ export default async function InspectionDetailPage({
     ]);
   }
 
+  // Signed URLs for private evidence objects (short-lived).
+  const signedUrls = await signEvidenceUrls(
+    supabase,
+    detail.evidence.map((e) => e.storage_path),
+  );
+
+  // Map markers: the inspection location (captured GPS if present, else planned) plus
+  // any geo-tagged evidence points.
+  const inspLat = insp.gps_latitude ?? insp.latitude;
+  const inspLon = insp.gps_longitude ?? insp.longitude;
+  const mapPoints: MapPoint[] = [];
+  if (Number.isFinite(inspLat) && Number.isFinite(inspLon)) {
+    mapPoints.push({ id: 'inspection', lat: inspLat as number, lon: inspLon as number, label: `${insp.ref_no} — inspection location` });
+  }
+  for (const e of detail.evidence) {
+    if (e.latitude != null && e.longitude != null) {
+      mapPoints.push({ id: e.id, lat: e.latitude, lon: e.longitude, label: `Evidence (${e.media_type})` });
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -81,10 +103,7 @@ export default async function InspectionDetailPage({
 
           <section className="space-y-2">
             <h3 className="text-sm font-medium">Location</h3>
-            <MapContainer
-              label={`Inspection at ${insp.gps_latitude ?? insp.latitude}, ${insp.gps_longitude ?? insp.longitude}`}
-              height={240}
-            />
+            <MapContainer label={`${insp.ref_no} location`} height={260} points={mapPoints} />
           </section>
 
           <section className="space-y-2">
@@ -92,15 +111,64 @@ export default async function InspectionDetailPage({
             {detail.evidence.length === 0 ? (
               <p className="text-sm text-zinc-500">No evidence captured.</p>
             ) : (
-              <ul className="grid gap-2 sm:grid-cols-2" data-testid="evidence-list">
-                {detail.evidence.map((e) => (
-                  <li key={e.id} className="rounded-md border border-black/10 p-2 text-xs dark:border-white/15">
-                    <span className="font-medium">{e.media_type}</span> · {fmt(e.captured_at)}
-                    {e.is_mocked && <span className="ml-1 text-red-600">(mocked)</span>}
-                    {e.clock_suspect && <span className="ml-1 text-amber-600">(clock suspect)</span>}
-                    <div className="truncate text-zinc-500">{e.storage_path}</div>
-                  </li>
-                ))}
+              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="evidence-list">
+                {detail.evidence.map((e) => {
+                  const url = signedUrls[e.storage_path];
+                  return (
+                    <li
+                      key={e.id}
+                      data-testid={`evidence-${e.id}`}
+                      className="overflow-hidden rounded-md border border-black/10 dark:border-white/15"
+                    >
+                      <div className="aspect-video bg-black/[.04] dark:bg-white/[.04]">
+                        {url && e.media_type === 'photo' ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={url}
+                            alt={`Evidence captured ${fmt(e.captured_at)}`}
+                            data-testid={`evidence-img-${e.id}`}
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : url && e.media_type === 'video' ? (
+                          <video
+                            src={url}
+                            controls
+                            data-testid={`evidence-video-${e.id}`}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-xs text-zinc-500">
+                            {e.media_type} unavailable
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-2 text-xs">
+                        <span className="font-medium capitalize">{e.media_type}</span> ·{' '}
+                        {fmt(e.captured_at)}
+                        {e.is_mocked && <span className="ml-1 text-red-600">(mocked)</span>}
+                        {e.clock_suspect && (
+                          <span className="ml-1 text-amber-600">(clock suspect)</span>
+                        )}
+                        {e.latitude != null && e.longitude != null && (
+                          <div className="text-zinc-500">
+                            {e.latitude.toFixed(5)}, {e.longitude.toFixed(5)}
+                          </div>
+                        )}
+                        {url && (
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline-offset-2 hover:underline"
+                          >
+                            Open full size
+                          </a>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>

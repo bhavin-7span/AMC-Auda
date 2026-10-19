@@ -72,6 +72,33 @@ export async function getInspectionDetail(
   return data as unknown as InspectionDetailShape;
 }
 
+const EVIDENCE_BUCKET = 'inspection-evidence';
+
+/**
+ * Create short-lived signed URLs for evidence objects so private images/videos can be
+ * displayed in the admin panel. Evidence lives in the private `inspection-evidence`
+ * bucket; access is additionally gated by `inspection_evidence_readable` RLS. Returns a
+ * map of storage_path → signed URL (paths that fail to sign are omitted).
+ */
+export async function signEvidenceUrls(
+  supabase: Client,
+  storagePaths: string[],
+  expiresInSeconds = 3600,
+): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  if (storagePaths.length === 0) return out;
+
+  const { data, error } = await supabase.storage
+    .from(EVIDENCE_BUCKET)
+    .createSignedUrls(storagePaths, expiresInSeconds);
+  if (error) return out; // Non-fatal: detail page still renders without thumbnails.
+
+  for (const item of data ?? []) {
+    if (item.signedUrl && item.path) out[item.path] = item.signedUrl;
+  }
+  return out;
+}
+
 export interface ManagerAction {
   action: string;
   to_status: string;

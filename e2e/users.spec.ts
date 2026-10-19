@@ -38,12 +38,26 @@ test('admin can edit a user role inline', async ({ page }) => {
   await login(page);
   await page.goto('/users');
 
-  // Open the first row's editor, change role, save, expect a success toast.
-  const firstEdit = page.getByTestId(/^edit-/).first();
-  await firstEdit.click();
-  const roleSelect = page.getByTestId(/^role-select-/).first();
+  // IMPORTANT: never edit the signed-in admin's own row — demoting it would break every
+  // subsequent admin-only test. Find a row whose email is NOT the test admin and derive
+  // that row's user id from its edit button's test id (edit-<uuid>).
+  const safeRow = page
+    .locator('tr')
+    .filter({ has: page.getByTestId(/^edit-/) })
+    .filter({ hasNot: page.getByText(email!, { exact: true }) })
+    .first();
+  if ((await safeRow.count()) === 0) {
+    test.skip(true, 'Needs a non-admin user to edit safely.');
+    return;
+  }
+  const editTestId = await safeRow.getByTestId(/^edit-/).getAttribute('data-testid');
+  const userId = editTestId!.replace('edit-', '');
+
+  // Interact by exact, id-scoped test ids (stable across re-render).
+  await page.getByTestId(`edit-${userId}`).click();
+  const roleSelect = page.getByTestId(`role-select-${userId}`);
   await expect(roleSelect).toBeVisible();
   await roleSelect.selectOption('supervisor');
-  await page.getByTestId(/^save-/).first().click();
+  await page.getByTestId(`save-${userId}`).click();
   await expect(page.getByTestId('toast').filter({ hasText: /role updated/i })).toBeVisible();
 });

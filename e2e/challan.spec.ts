@@ -27,11 +27,14 @@ test('guest hitting /challan is redirected to /login (not exposed)', async ({ pa
   await expect(page).toHaveURL(/\/login(\?|$)/);
 });
 
-test('admin: /challan is 404 while the flag is OFF', async ({ page }) => {
+test('admin: /challan shows not-found (no challan UI) while the flag is OFF', async ({ page }) => {
   test.skip(!email || !password || challanOn, 'Needs an admin account with the challan flag OFF.');
   await login(page);
-  const res = await page.goto('/challan');
-  expect(res?.status()).toBe(404);
+  await page.goto('/challan');
+  // notFound() renders the not-found page; the App Router may serve it with a 200 on a
+  // client navigation, so assert on CONTENT: the challan screen must NOT be present.
+  await expect(page.getByRole('heading', { name: 'M-Challan' })).toHaveCount(0);
+  await expect(page.getByText(/not found|404/i).first()).toBeVisible();
 });
 
 test('admin: no challan nav item while the flag is OFF', async ({ page }) => {

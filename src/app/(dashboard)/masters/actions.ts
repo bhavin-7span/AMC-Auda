@@ -84,7 +84,10 @@ export async function upsertMasterAction(
 
   for (const [key, value] of formData.entries()) {
     if (key === 'type' || key === 'id') continue;
-    payload[key] = typeof value === 'string' ? value : String(value);
+    const str = typeof value === 'string' ? value : String(value);
+    // Omit empty optional fields so the RPC applies its defaults instead of trying to
+    // cast an empty string (e.g. ''::int fails in Postgres for sort_order/min_evidence).
+    if (str !== '') payload[key] = str;
   }
   // Checkbox: is_active present only when checked.
   payload.is_active = formData.get('is_active') === 'on' || formData.get('is_active') === 'true';

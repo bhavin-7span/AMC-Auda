@@ -28,7 +28,7 @@ test('admin sees the attendance log and rules', async ({ page }) => {
   test.skip(!email || !password, 'Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD to run.');
   await login(page);
   await page.goto('/attendance');
-  await expect(page.getByRole('heading', { name: 'Attendance' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Attendance', exact: true })).toBeVisible();
   await expect(page.getByTestId('data-table')).toBeVisible();
   await expect(page.getByTestId('rules-form')).toBeVisible();
 });
