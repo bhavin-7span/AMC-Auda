@@ -4,9 +4,10 @@ import { test, expect } from '@playwright/test';
  * Phase 0 smoke tests: the app boots and can reach the existing Auda RFP backend.
  */
 
-test('home page renders the app shell', async ({ page }) => {
+test('root redirects an unauthenticated visitor to /login', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /AUDA FieldTrack/i })).toBeVisible();
+  await expect(page).toHaveURL(/\/login(\?|$)/);
+  await expect(page.getByTestId('login-form')).toBeVisible();
 });
 
 test('health endpoint connects to the Auda RFP backend', async ({ request }) => {

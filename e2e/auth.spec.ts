@@ -52,3 +52,19 @@ test('admin can sign in and reach the dashboard', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   await expect(page.getByTestId('account-email')).toContainText(email!);
 });
+
+test('root redirects an authenticated admin to /dashboard', async ({ page }) => {
+  test.skip(!email || !password, 'Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD to run.');
+
+  // Sign in first.
+  await page.goto('/login');
+  await page.getByTestId('login-email').fill(email!);
+  await page.getByTestId('login-password').fill(password!);
+  await page.getByTestId('login-submit').click();
+  await expect(page).toHaveURL(/\/dashboard(\?|$)/);
+
+  // Now hitting the root should land on the dashboard, not a landing page.
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/dashboard(\?|$)/);
+  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+});
