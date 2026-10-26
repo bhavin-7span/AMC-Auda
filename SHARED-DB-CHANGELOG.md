@@ -28,6 +28,26 @@ Phase-1.6 RBAC sign-off and the coordination checklist in `tasks.md`.
 | `m4_15_fk_covering_indexes` | indexes on `challan_types.department_id`, `escalation_rules.template_code` |
 | `m4_16_admin_bulk_upload_master` | `admin_bulk_upload_master` |
 | `m4_17_admin_travel_report` | `admin_travel_report` |
+| `m4_18_upsert_master_empty_numeric_guard` | hardened `admin_upsert_master` (nullif empty numerics) |
+| `m4_19_audit_ip_parse_fix` | bugfix: `write_audit_log` multi-IP x-forwarded-for crash |
+| `m4_20_challans_table` | `challans` + `challan_statuses` tables + `challan_ref_seq` (full M-Challan) |
+| `m4_21_challan_rpcs` | `admin_upsert_challan`, `admin_transition_challan`, `admin_list_challans`, `admin_challan_detail` |
+
+## M-Challan module (now fully built, not a stub)
+
+The optional M-Challan module is now implemented end-to-end in the admin panel, still
+gated behind `app_settings.challan_enabled`. The mobile app ships no challan
+functionality, so these are the sole challan objects in the project (no collision).
+
+- `challans` — transaction table: `ref_no` (`CHL-YYYY-NNNNNN` via `challan_ref_seq`),
+  type, department, status, violation, rule/section, offender, location + lat/long,
+  amount, evidence_path, issued/paid/cancelled/notified timestamps. RLS: read
+  admin/dept_head/supervisor, write admin/dept_head.
+- `challan_statuses` — config statuses: draft → issued → paid / cancelled.
+- Workflow: create (draft) → issue → pay, with cancel from draft/issued; each transition
+  audited. PDF generation with the unique reference number. Delivery (SMS/link) and
+  payment integration are deferred until an AUDA-approved gateway exists (seams present:
+  `notified_at`, `paid_at`).
 
 ## New column on an existing table
 

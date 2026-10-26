@@ -51,3 +51,39 @@ test('admin: challan screen + nav appear when the flag is ON', async ({ page }) 
   await expect(page.getByRole('heading', { name: 'M-Challan' })).toBeVisible();
   await expect(page.getByTestId('nav-challan')).toBeVisible();
 });
+
+test('admin: full challan lifecycle — create → issue → pay → PDF', async ({ page }) => {
+  test.skip(!email || !password || !challanOn, 'Needs an admin account with the challan flag ON.');
+  await login(page);
+  await page.goto('/challan');
+
+  // Create a draft challan.
+  await page.getByTestId('new-challan').click();
+  await expect(page.getByTestId('challan-form')).toBeVisible();
+  const marker = `E2E violation ${Date.now().toString().slice(-6)}`;
+  await page.getByTestId('challan-violation').fill(marker);
+  await page.getByTestId('challan-save').click();
+
+  // Lands on the detail page in draft status.
+  await expect(page.getByTestId('challan-ref')).toBeVisible();
+  await expect(page.getByTestId('challan-ref')).toHaveText(/^CHL-\d{4}-\d{6}$/);
+  await expect(page.getByTestId('challan-status')).toHaveText(/draft/i);
+
+  // Issue it.
+  await page.getByTestId('challan-action-issue').click();
+  await expect(page.getByTestId('toast').filter({ hasText: /issued/i })).toBeVisible();
+  await expect(page.getByTestId('challan-status')).toHaveText(/issued/i);
+
+  // Mark paid (terminal).
+  await page.getByTestId('challan-action-pay').click();
+  await expect(page.getByTestId('toast').filter({ hasText: /paid/i })).toBeVisible();
+  await expect(page.getByTestId('challan-status')).toHaveText(/paid/i);
+  await expect(page.getByTestId('challan-terminal')).toBeVisible();
+
+  // PDF downloads with the challan reference as the filename.
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByTestId('challan-pdf').click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^CHL-\d{4}-\d{6}\.pdf$/);
+});

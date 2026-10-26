@@ -88,6 +88,72 @@ async function toPdf(rows: ReportRow[], title: string): Promise<Uint8Array> {
   return doc.save();
 }
 
+/** Fields rendered on a challan PDF (label, value). */
+export interface ChallanPdfData {
+  ref_no: string;
+  rows: [string, string][];
+}
+
+/**
+ * Generate a single-challan PDF with the unique reference number (RFP 9.3). A simple,
+ * self-contained A4 document — no external template needed. The final AUDA challan
+ * format/authorities are an FRS/SRS item; this is a correct, functional baseline.
+ */
+export async function generateChallanPdf(data: ChallanPdfData): Promise<GeneratedFile> {
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const page = doc.addPage([595, 842]); // A4 portrait
+  const margin = 48;
+  let y = 790;
+
+  page.drawText('Ahmedabad Urban Development Authority', { x: margin, y, size: 15, font: bold });
+  y -= 20;
+  page.drawText('AUDA FieldTrack — Challan', { x: margin, y, size: 11, font, color: rgb(0.3, 0.3, 0.3) });
+  y -= 14;
+  page.drawText(`Reference: ${data.ref_no}`, { x: margin, y, size: 11, font: bold });
+  y -= 10;
+  page.drawLine({ start: { x: margin, y }, end: { x: 547, y }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
+  y -= 24;
+
+  for (const [label, value] of data.rows) {
+    page.drawText(label, { x: margin, y, size: 9, font: bold, color: rgb(0.35, 0.35, 0.35) });
+    const lines = wrapText(value || '—', 70);
+    lines.forEach((line, i) => {
+      page.drawText(line, { x: margin + 150, y: y - i * 13, size: 10, font });
+    });
+    y -= Math.max(18, lines.length * 13 + 4);
+    if (y < margin + 40) break;
+  }
+
+  page.drawText(
+    `Generated ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST`,
+    { x: margin, y: margin, size: 7, font, color: rgb(0.5, 0.5, 0.5) },
+  );
+
+  return {
+    body: await doc.save(),
+    contentType: 'application/pdf',
+    filename: `${data.ref_no}.pdf`,
+  };
+}
+
+function wrapText(text: string, maxChars: number): string[] {
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let current = '';
+  for (const w of words) {
+    if ((current + ' ' + w).trim().length > maxChars) {
+      if (current) lines.push(current);
+      current = w;
+    } else {
+      current = (current + ' ' + w).trim();
+    }
+  }
+  if (current) lines.push(current);
+  return lines.length ? lines : ['—'];
+}
+
 export async function generateExport(
   rows: ReportRow[],
   format: ExportFormat,

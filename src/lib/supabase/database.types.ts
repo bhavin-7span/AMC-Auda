@@ -93,6 +93,7 @@ export type Database = {
           longitude: number
           punch_type: string
           punched_at: string
+          punched_by: string | null
           selfie_path: string | null
           shift_id: string | null
           user_id: string
@@ -117,6 +118,7 @@ export type Database = {
           longitude: number
           punch_type: string
           punched_at?: string
+          punched_by?: string | null
           selfie_path?: string | null
           shift_id?: string | null
           user_id?: string
@@ -141,6 +143,7 @@ export type Database = {
           longitude?: number
           punch_type?: string
           punched_at?: string
+          punched_by?: string | null
           selfie_path?: string | null
           shift_id?: string | null
           user_id?: string
@@ -169,8 +172,11 @@ export type Database = {
           day_end_rule: string
           day_start_rule: string
           deduct_breaks: boolean
+          face_match_threshold: number
           half_day_minutes: number
           id: number
+          shared_punch_lockout_minutes: number
+          shared_punch_max_failures: number
           shift_window_minutes: number
           timezone: string
           updated_at: string
@@ -180,8 +186,11 @@ export type Database = {
           day_end_rule?: string
           day_start_rule?: string
           deduct_breaks?: boolean
+          face_match_threshold?: number
           half_day_minutes?: number
           id?: number
+          shared_punch_lockout_minutes?: number
+          shared_punch_max_failures?: number
           shift_window_minutes?: number
           timezone?: string
           updated_at?: string
@@ -191,8 +200,11 @@ export type Database = {
           day_end_rule?: string
           day_start_rule?: string
           deduct_breaks?: boolean
+          face_match_threshold?: number
           half_day_minutes?: number
           id?: number
+          shared_punch_lockout_minutes?: number
+          shared_punch_max_failures?: number
           shift_window_minutes?: number
           timezone?: string
           updated_at?: string
@@ -241,6 +253,36 @@ export type Database = {
         }
         Relationships: []
       }
+      challan_statuses: {
+        Row: {
+          code: string
+          color: string | null
+          is_active: boolean
+          is_terminal: boolean
+          name: string
+          name_i18n: Json
+          sort_order: number
+        }
+        Insert: {
+          code: string
+          color?: string | null
+          is_active?: boolean
+          is_terminal?: boolean
+          name: string
+          name_i18n?: Json
+          sort_order?: number
+        }
+        Update: {
+          code?: string
+          color?: string | null
+          is_active?: boolean
+          is_terminal?: boolean
+          name?: string
+          name_i18n?: Json
+          sort_order?: number
+        }
+        Relationships: []
+      }
       challan_types: {
         Row: {
           code: string
@@ -282,6 +324,103 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "departments"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      challans: {
+        Row: {
+          amount: number | null
+          cancelled_at: string | null
+          challan_type_id: string | null
+          created_at: string
+          department_id: string | null
+          evidence_path: string | null
+          id: string
+          issued_at: string | null
+          issued_by: string | null
+          latitude: number | null
+          location_name: string | null
+          longitude: number | null
+          notified_at: string | null
+          offender_contact: string | null
+          offender_name: string | null
+          paid_at: string | null
+          reason: string | null
+          ref_no: string
+          rule_section: string | null
+          status: string
+          updated_at: string
+          violation: string
+        }
+        Insert: {
+          amount?: number | null
+          cancelled_at?: string | null
+          challan_type_id?: string | null
+          created_at?: string
+          department_id?: string | null
+          evidence_path?: string | null
+          id?: string
+          issued_at?: string | null
+          issued_by?: string | null
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
+          notified_at?: string | null
+          offender_contact?: string | null
+          offender_name?: string | null
+          paid_at?: string | null
+          reason?: string | null
+          ref_no?: string
+          rule_section?: string | null
+          status?: string
+          updated_at?: string
+          violation: string
+        }
+        Update: {
+          amount?: number | null
+          cancelled_at?: string | null
+          challan_type_id?: string | null
+          created_at?: string
+          department_id?: string | null
+          evidence_path?: string | null
+          id?: string
+          issued_at?: string | null
+          issued_by?: string | null
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
+          notified_at?: string | null
+          offender_contact?: string | null
+          offender_name?: string | null
+          paid_at?: string | null
+          reason?: string | null
+          ref_no?: string
+          rule_section?: string | null
+          status?: string
+          updated_at?: string
+          violation?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challans_challan_type_id_fkey"
+            columns: ["challan_type_id"]
+            isOneToOne: false
+            referencedRelation: "challan_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challans_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challans_status_fkey"
+            columns: ["status"]
+            isOneToOne: false
+            referencedRelation: "challan_statuses"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -895,6 +1034,33 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_punch_attempts: {
+        Row: {
+          created_at: string
+          face_distance: number | null
+          id: string
+          matched: boolean
+          operator_id: string
+          target_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          face_distance?: number | null
+          id?: string
+          matched: boolean
+          operator_id: string
+          target_user_id: string
+        }
+        Update: {
+          created_at?: string
+          face_distance?: number | null
+          id?: string
+          matched?: boolean
+          operator_id?: string
+          target_user_id?: string
+        }
+        Relationships: []
+      }
       shifts: {
         Row: {
           allow_field_duty: boolean
@@ -1061,6 +1227,7 @@ export type Database = {
         Returns: Json
       }
       admin_bulk_upload_users: { Args: { p_rows: Json }; Returns: Json }
+      admin_challan_detail: { Args: { p_id: string }; Returns: Json }
       admin_correct_attendance: {
         Args: {
           p_inside_geofence?: boolean
@@ -1089,6 +1256,7 @@ export type Database = {
           longitude: number
           punch_type: string
           punched_at: string
+          punched_by: string | null
           selfie_path: string | null
           shift_id: string | null
           user_id: string
@@ -1113,6 +1281,16 @@ export type Database = {
           p_page?: number
           p_page_size?: number
           p_user?: string
+        }
+        Returns: Json
+      }
+      admin_list_challans: {
+        Args: {
+          p_department?: string
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_status?: string
         }
         Returns: Json
       }
@@ -1181,6 +1359,39 @@ export type Database = {
         }
       }
       admin_system_health: { Args: never; Returns: Json }
+      admin_transition_challan: {
+        Args: { p_action: string; p_id: string }
+        Returns: {
+          amount: number | null
+          cancelled_at: string | null
+          challan_type_id: string | null
+          created_at: string
+          department_id: string | null
+          evidence_path: string | null
+          id: string
+          issued_at: string | null
+          issued_by: string | null
+          latitude: number | null
+          location_name: string | null
+          longitude: number | null
+          notified_at: string | null
+          offender_contact: string | null
+          offender_name: string | null
+          paid_at: string | null
+          reason: string | null
+          ref_no: string
+          rule_section: string | null
+          status: string
+          updated_at: string
+          violation: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "challans"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_travel_report: {
         Args: { p_date: string; p_user: string }
         Returns: Json
@@ -1192,8 +1403,11 @@ export type Database = {
           day_end_rule: string
           day_start_rule: string
           deduct_breaks: boolean
+          face_match_threshold: number
           half_day_minutes: number
           id: number
+          shared_punch_lockout_minutes: number
+          shared_punch_max_failures: number
           shift_window_minutes: number
           timezone: string
           updated_at: string
@@ -1201,6 +1415,39 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "attendance_rules"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_upsert_challan: {
+        Args: { p_payload: Json }
+        Returns: {
+          amount: number | null
+          cancelled_at: string | null
+          challan_type_id: string | null
+          created_at: string
+          department_id: string | null
+          evidence_path: string | null
+          id: string
+          issued_at: string | null
+          issued_by: string | null
+          latitude: number | null
+          location_name: string | null
+          longitude: number | null
+          notified_at: string | null
+          offender_contact: string | null
+          offender_name: string | null
+          paid_at: string | null
+          reason: string | null
+          ref_no: string
+          rule_section: string | null
+          status: string
+          updated_at: string
+          violation: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "challans"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1289,6 +1536,10 @@ export type Database = {
         }
         Returns: Json
       }
+      attendance_failed_shared_attempts: {
+        Args: { p_operator: string; p_target: string }
+        Returns: number
+      }
       attendance_resolve: {
         Args: { p_time: string; p_user: string }
         Returns: {
@@ -1376,6 +1627,26 @@ export type Database = {
         Returns: boolean
       }
       issue_tracking_token: { Args: never; Returns: Json }
+      lookup_employee_for_shared_punch: {
+        Args: { p_employee_id: string }
+        Returns: Json
+      }
+      record_shared_punch: {
+        Args: {
+          p_accuracy_m: number
+          p_device_time: string
+          p_embedding: number[]
+          p_employee_id: string
+          p_is_mocked: boolean
+          p_latitude: number
+          p_longitude: number
+          p_model_version: string
+          p_punch_id: string
+          p_punch_type: string
+          p_selfie_path: string
+        }
+        Returns: Json
+      }
       revoke_my_tracking_tokens: { Args: never; Returns: undefined }
       save_inspection: { Args: { p: Json }; Returns: Json }
       set_own_face_embedding: {
