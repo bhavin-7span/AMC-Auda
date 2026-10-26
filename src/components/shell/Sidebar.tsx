@@ -37,7 +37,7 @@ export function Sidebar({ sections, roleLabel }: { sections: NavSection[]; roleL
         data-testid="sidebar"
         className={`${
           open ? 'block' : 'hidden'
-        } border-b border-black/10 bg-white md:block md:w-64 md:shrink-0 md:border-r md:border-b-0 dark:border-white/15 dark:bg-zinc-950`}
+        } border-b border-black/10 bg-white md:block md:h-screen md:w-64 md:shrink-0 md:overflow-y-auto md:border-r md:border-b-0 dark:border-white/15 dark:bg-zinc-950`}
       >
         <div className="hidden items-center gap-2 p-4 md:flex">
           <span className="text-lg font-semibold tracking-tight">AUDA FieldTrack</span>

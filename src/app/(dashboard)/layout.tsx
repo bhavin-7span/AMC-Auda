@@ -26,9 +26,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
  */
 function ShellFallback() {
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
-      <div className="md:w-64 md:shrink-0 border-black/10 md:border-r dark:border-white/15" />
-      <main className="flex-1 p-6" />
+    <div className="flex h-screen flex-col overflow-hidden md:flex-row">
+      <div className="md:h-screen md:w-64 md:shrink-0 border-black/10 md:border-r dark:border-white/15" />
+      <main className="flex-1 overflow-y-auto p-6" />
     </div>
   );
 }
