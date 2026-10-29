@@ -42,3 +42,51 @@ export async function getDashboardWidgets(
   if (error) throw error;
   return data as unknown as DashboardWidgets;
 }
+
+export interface TrendPoint {
+  /** IST date, YYYY-MM-DD. */
+  date: string;
+  created: number;
+  completed: number;
+}
+
+const istDate = (ts: string) => new Date(ts).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+
+/**
+ * Inspections created vs completed per IST day for the `days` days ending `today`
+ * (YYYY-MM-DD). Reads the inspections table, so RLS scopes rows to the caller's role.
+ */
+export async function getInspectionTrend(
+  supabase: Client,
+  { today, days, department }: { today: string; days: number; department?: string | null },
+): Promise<TrendPoint[]> {
+  const start = new Date(`${today}T00:00:00+05:30`);
+  start.setUTCDate(start.getUTCDate() - (days - 1));
+  const since = start.toISOString();
+
+  let query = supabase
+    .from('inspections')
+    .select('created_at, completed_at')
+    .or(`created_at.gte.${since},completed_at.gte.${since}`)
+    .limit(5000);
+  if (department) query = query.eq('department_id', department);
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const points = new Map<string, TrendPoint>();
+  for (let i = 0; i < days; i++) {
+    const d = new Date(start);
+    d.setUTCDate(d.getUTCDate() + i);
+    const date = istDate(d.toISOString());
+    points.set(date, { date, created: 0, completed: 0 });
+  }
+  for (const row of data ?? []) {
+    const created = points.get(istDate(row.created_at));
+    if (created) created.created += 1;
+    if (row.completed_at) {
+      const completed = points.get(istDate(row.completed_at));
+      if (completed) completed.completed += 1;
+    }
+  }
+  return [...points.values()];
+}

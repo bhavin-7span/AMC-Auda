@@ -3,9 +3,11 @@ import { createClient } from '@/lib/supabase/server';
 import { getFeatureFlags } from '@/lib/config/feature-flags';
 import { listChallans, listActiveChallanTypes, type ChallanRow, type ChallanStatus, type ChallanTypeOption } from '@/lib/data/challans';
 
-const VALID_STATUSES: ChallanStatus[] = ['draft', 'issued', 'paid', 'cancelled'];
 import { ChallanList } from './ChallanList';
+import { ChallanFilters } from './ChallanFilters';
 import { CreateChallan, type DeptOption } from './CreateChallan';
+
+const VALID_STATUSES: ChallanStatus[] = ['draft', 'issued', 'paid', 'cancelled'];
 
 const PAGE_SIZE = 20;
 
@@ -17,7 +19,7 @@ const PAGE_SIZE = 20;
 export default async function ChallanPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; status?: string; q?: string }>;
+  searchParams: Promise<{ page?: string; status?: string; q?: string; department?: string }>;
 }) {
   const flags = await getFeatureFlags();
   if (!flags.challanEnabled) notFound();
@@ -35,7 +37,13 @@ export default async function ChallanPage({
 
   try {
     const [list, types, depts] = await Promise.all([
-      listChallans(supabase, { page, pageSize: PAGE_SIZE, status, search: sp.q ?? null }),
+      listChallans(supabase, {
+        page,
+        pageSize: PAGE_SIZE,
+        status,
+        search: sp.q || null,
+        department: sp.department || null,
+      }),
       listActiveChallanTypes(supabase),
       supabase.from('departments').select('id, name').eq('is_active', true).order('sort_order'),
     ]);
@@ -52,20 +60,17 @@ export default async function ChallanPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">M-Challan</h1>
-        <p className="text-zinc-600 dark:text-zinc-400">
-          Create, issue and track challans. Generate a challan PDF with a unique reference number.
-        </p>
-      </div>
-
       {error ? (
-        <p className="rounded-md border border-red-500/40 bg-red-50 px-3 py-2 text-sm text-red-900 dark:bg-red-950/60 dark:text-red-100">
+        <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
       ) : (
         <>
-          <CreateChallan challanTypes={challanTypes} departments={departments} />
+          <ChallanFilters
+            departments={departments}
+            current={sp}
+            left={<CreateChallan challanTypes={challanTypes} departments={departments} />}
+          />
           <ChallanList rows={rows} total={total} page={page} pageSize={PAGE_SIZE} />
         </>
       )}

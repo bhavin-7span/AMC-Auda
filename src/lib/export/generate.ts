@@ -28,12 +28,26 @@ function cell(v: unknown): string {
   return String(v);
 }
 
+/**
+ * pdf-lib's standard fonts only encode WinAnsi; drawText THROWS on anything else (e.g.
+ * Gujarati/Hindi names, ₹), which failed the whole export. Replace unencodable characters
+ * so the PDF always renders. Full Unicode output needs an embedded font (fontkit + a
+ * Noto font) — tracked in RFP-GAP-ANALYSIS.md.
+ */
+function pdfSafe(text: string): string {
+  return text
+    .replace(/₹/g, 'INR ')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/[^\x20-\x7E\xA0-\xFF–—‘’“”•…€]/g, '?');
+}
+
 function toCsv(rows: ReportRow[]): Uint8Array {
   const cols = columnsOf(rows);
   const esc = (s: string) => (/[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s);
   const lines = [cols.map(esc).join(',')];
   for (const r of rows) lines.push(cols.map((c) => esc(cell(r[c]))).join(','));
-  return new TextEncoder().encode(lines.join('\n'));
+  // UTF-8 BOM so Excel opens Gujarati/Hindi text correctly instead of mojibake.
+  return new TextEncoder().encode(`﻿${lines.join('\n')}`);
 }
 
 function toXlsx(rows: ReportRow[]): Uint8Array {
@@ -55,7 +69,7 @@ async function toPdf(rows: ReportRow[], title: string): Promise<Uint8Array> {
   const margin = 30;
   let y = 560;
 
-  page.drawText(`AUDA FieldTrack — ${title}`, { x: margin, y, size: 14, font: bold });
+  page.drawText(pdfSafe(`AUDA FieldTrack — ${title}`), { x: margin, y, size: 14, font: bold });
   y -= 10;
   page.drawText(`Generated ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST`, {
     x: margin,
@@ -69,7 +83,7 @@ async function toPdf(rows: ReportRow[], title: string): Promise<Uint8Array> {
   const colWidth = (842 - margin * 2) / Math.max(cols.length, 1);
   const drawRow = (vals: string[], f = font, size = 7) => {
     vals.forEach((v, i) => {
-      page.drawText(v.slice(0, 22), { x: margin + i * colWidth, y, size, font: f });
+      page.drawText(pdfSafe(v).slice(0, 22), { x: margin + i * colWidth, y, size, font: f });
     });
     y -= 14;
   };
@@ -111,14 +125,14 @@ export async function generateChallanPdf(data: ChallanPdfData): Promise<Generate
   y -= 20;
   page.drawText('AUDA FieldTrack — Challan', { x: margin, y, size: 11, font, color: rgb(0.3, 0.3, 0.3) });
   y -= 14;
-  page.drawText(`Reference: ${data.ref_no}`, { x: margin, y, size: 11, font: bold });
+  page.drawText(pdfSafe(`Reference: ${data.ref_no}`), { x: margin, y, size: 11, font: bold });
   y -= 10;
   page.drawLine({ start: { x: margin, y }, end: { x: 547, y }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
   y -= 24;
 
   for (const [label, value] of data.rows) {
-    page.drawText(label, { x: margin, y, size: 9, font: bold, color: rgb(0.35, 0.35, 0.35) });
-    const lines = wrapText(value || '—', 70);
+    page.drawText(pdfSafe(label), { x: margin, y, size: 9, font: bold, color: rgb(0.35, 0.35, 0.35) });
+    const lines = wrapText(pdfSafe(value || '—'), 70);
     lines.forEach((line, i) => {
       page.drawText(line, { x: margin + 150, y: y - i * 13, size: 10, font });
     });

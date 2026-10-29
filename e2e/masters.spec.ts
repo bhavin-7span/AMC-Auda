@@ -31,7 +31,10 @@ test('admin sees department and geo-fence managers', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Master Data' })).toBeVisible();
   await expect(page.getByTestId('master-department')).toBeVisible();
   await expect(page.getByTestId('master-work_location')).toBeVisible();
-  await expect(page.getByTestId('map-container')).toBeVisible();
+  // Real Leaflet map when geo-fences exist; labeled placeholder when there are none.
+  await expect(
+    page.locator('[data-testid="map-container"], .leaflet-container').first(),
+  ).toBeVisible();
 });
 
 test('admin can add a department', async ({ page }) => {
@@ -44,7 +47,7 @@ test('admin can add a department', async ({ page }) => {
   await page.getByTestId('input-code').fill(`E2E${suffix}`);
   await page.getByTestId('input-name').fill(`E2E Dept ${suffix}`);
   await page.getByTestId('save-department').click();
-  await expect(page.getByTestId('toast').filter({ hasText: /departments saved/i })).toBeVisible();
+  await expect(page.locator('[data-sonner-toast]').filter({ hasText: /departments saved/i })).toBeVisible();
 });
 
 test('admin can open the bulk-upload panel for departments', async ({ page }) => {

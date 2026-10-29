@@ -44,13 +44,6 @@ export default async function AuditPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Audit Trail</h1>
-        <p className="text-zinc-600 dark:text-zinc-400">
-          Append-only record of administrative and data actions across the system.
-        </p>
-      </div>
-
       {error ? (
         <p className="rounded-md border border-red-500/40 bg-red-50 px-3 py-2 text-sm text-red-900 dark:bg-red-950/60 dark:text-red-100">
           {error}

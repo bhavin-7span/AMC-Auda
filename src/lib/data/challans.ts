@@ -98,12 +98,14 @@ export async function transitionChallan(
 export interface ChallanTypeOption {
   id: string;
   name: string;
+  rule_section: string | null;
+  department_id: string | null;
 }
 
 export async function listActiveChallanTypes(supabase: Client): Promise<ChallanTypeOption[]> {
   const { data, error } = await supabase
     .from('challan_types')
-    .select('id, name')
+    .select('id, name, rule_section, department_id')
     .eq('is_active', true)
     .order('sort_order');
   if (error) throw error;

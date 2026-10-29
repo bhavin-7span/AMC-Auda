@@ -59,13 +59,6 @@ export default async function ReportsPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">MIS Reports</h1>
-        <p className="text-zinc-600 dark:text-zinc-400">
-          Filter, preview and export inspection &amp; attendance data.
-        </p>
-      </div>
-
       {error ? (
         <p className="rounded-md border border-red-500/40 bg-red-50 px-3 py-2 text-sm text-red-900 dark:bg-red-950/60 dark:text-red-100">
           {error}

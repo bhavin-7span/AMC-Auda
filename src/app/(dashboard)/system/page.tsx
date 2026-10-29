@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { getSystemHealth, type SystemHealth } from '@/lib/data/notifications';
-import { Widget } from '@/components/ui/Widget';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 function fmt(v: unknown): string {
   if (v === null || v === undefined) return '—';
@@ -31,51 +32,49 @@ export default async function SystemPage() {
         : 'Could not load system health.';
   }
 
+  if (error) {
+    return (
+      <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        {error}
+      </p>
+    );
+  }
+  if (!health) return null;
+
+  const sections = [
+    { title: 'Record counts', testId: 'health-counts', grid: 'sm:grid-cols-2 lg:grid-cols-4', entries: health.counts },
+    { title: 'Synchronization', testId: 'health-sync', grid: 'sm:grid-cols-2 lg:grid-cols-3', entries: health.sync },
+    { title: 'Feature flags', testId: 'health-flags', grid: 'sm:grid-cols-2', entries: health.flags },
+  ];
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">System Health</h1>
-        <p className="text-zinc-600 dark:text-zinc-400">
-          Integration, synchronization and operational status.
-        </p>
-      </div>
+      <p className="text-xs text-muted-foreground">Checked {fmt(health.checked_at)} IST</p>
 
-      {error ? (
-        <p className="rounded-md border border-red-500/40 bg-red-50 px-3 py-2 text-sm text-red-900 dark:bg-red-950/60 dark:text-red-100">
-          {error}
-        </p>
-      ) : health ? (
-        <>
-          <p className="text-xs text-zinc-500">Checked {fmt(health.checked_at)} IST</p>
-
-          <section className="space-y-2">
-            <h2 className="text-lg font-medium">Record counts</h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="health-counts">
-              {Object.entries(health.counts).map(([k, v]) => (
-                <Widget key={k} title={k.replace(/_/g, ' ')} value={v} />
-              ))}
-            </div>
-          </section>
-
-          <section className="space-y-2">
-            <h2 className="text-lg font-medium">Synchronization</h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="health-sync">
-              {Object.entries(health.sync).map(([k, v]) => (
-                <Widget key={k} title={k.replace(/_/g, ' ')} value={fmt(v)} />
-              ))}
-            </div>
-          </section>
-
-          <section className="space-y-2">
-            <h2 className="text-lg font-medium">Feature flags</h2>
-            <div className="grid gap-3 sm:grid-cols-2" data-testid="health-flags">
-              {Object.entries(health.flags).map(([k, v]) => (
-                <Widget key={k} title={k.replace(/_/g, ' ')} value={fmt(v)} />
-              ))}
-            </div>
-          </section>
-        </>
-      ) : null}
+      {sections.map((s) => (
+        <section key={s.testId} className="space-y-2">
+          <h2 className="text-lg font-medium">{s.title}</h2>
+          <div className={`grid gap-3 ${s.grid}`} data-testid={s.testId}>
+            {Object.entries(s.entries as Record<string, unknown>).map(([k, v]) => (
+              <Card key={k} size="sm" data-testid="widget">
+                <CardHeader>
+                  <CardDescription className="capitalize">{k.replace(/_/g, ' ')}</CardDescription>
+                  <CardTitle
+                    className="text-2xl font-semibold tabular-nums group-data-[size=sm]/card:text-2xl"
+                    data-testid="widget-value"
+                  >
+                    {typeof v === 'boolean' ? (
+                      <Badge variant={v ? 'success' : 'outline'}>{fmt(v)}</Badge>
+                    ) : (
+                      fmt(v)
+                    )}
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }

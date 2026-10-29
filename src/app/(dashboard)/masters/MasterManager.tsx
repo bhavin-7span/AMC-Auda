@@ -1,9 +1,24 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { DataTable, type Column } from '@/components/ui/DataTable';
-import { Button, Field, Input } from '@/components/ui/Form';
-import { useToast } from '@/components/ui/Toast';
+import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
 import type { MasterType } from '@/lib/data/masters';
 import { upsertMasterAction, setMasterActiveAction, bulkUploadMasterAction } from './actions';
 
@@ -22,8 +37,8 @@ export interface MasterRecord {
 }
 
 /**
- * Generic master-data manager: a table of records + an add/edit form, driven by a
- * field spec. Writes go through the admin-gated, audited server actions
+ * Generic master-data manager: a table of records with add/edit and bulk-upload dialogs,
+ * driven by a field spec. Writes go through the admin-gated, audited server actions
  * (upsertMasterAction / setMasterActiveAction → admin RPCs). "Delete" is a soft-delete
  * (is_active toggle), per RFP 4.3.
  */
@@ -38,32 +53,45 @@ export function MasterManager({
   fields: FieldSpec[];
   rows: MasterRecord[];
 }) {
-  const { show } = useToast();
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState<MasterRecord | 'new' | null>(null);
+  const [active, setActive] = useState(true);
   const [bulkOpen, setBulkOpen] = useState(false);
+
+  function openEdit(row: MasterRecord | 'new') {
+    setEditing(row);
+    setActive(row === 'new' ? true : Boolean(row.is_active));
+  }
 
   function submitBulk(formData: FormData) {
     formData.set('type', masterType);
     startTransition(async () => {
       const res = await bulkUploadMasterAction({ result: null, error: null }, formData);
-      if (res.error) show(res.error, 'error');
+      if (res.error) toast.error(res.error);
       else if (res.result) {
-        show(`${res.result.ok} added, ${res.result.failed} failed`, res.result.failed ? 'warning' : 'success');
-        if (!res.result.failed) setBulkOpen(false);
+        const msg = `${res.result.ok} added, ${res.result.failed} failed`;
+        if (res.result.failed) toast.warning(msg);
+        else {
+          toast.success(msg);
+          setBulkOpen(false);
+        }
       }
     });
   }
 
   function submit(formData: FormData) {
     formData.set('type', masterType);
+    if (editing && editing !== 'new') formData.set('id', editing.id);
+    // The action reads is_active as "on" when checked; the shadcn Checkbox is controlled.
+    if (active) formData.set('is_active', 'on');
+    else formData.delete('is_active');
     startTransition(async () => {
       const res = await upsertMasterAction({ ok: false, error: null }, formData);
       if (res.ok) {
-        show(`${title} saved`, 'success');
+        toast.success(`${title} saved`);
         setEditing(null);
       } else {
-        show(res.error ?? 'Save failed', 'error');
+        toast.error(res.error ?? 'Save failed');
       }
     });
   }
@@ -75,136 +103,166 @@ export function MasterManager({
     fd.set('active', String(!row.is_active));
     startTransition(async () => {
       const res = await setMasterActiveAction({ ok: false, error: null }, fd);
-      if (res.ok) show(row.is_active ? `${title} deactivated` : `${title} activated`, 'success');
-      else show(res.error ?? 'Update failed', 'error');
+      if (res.ok) toast.success(row.is_active ? `${title} deactivated` : `${title} activated`);
+      else toast.error(res.error ?? 'Update failed');
     });
   }
 
-  const columns: Column<MasterRecord>[] = [
-    ...fields.map<Column<MasterRecord>>((f) => ({
-      key: f.key,
-      header: f.label,
-      cell: (r) => String(r[f.key] ?? '—'),
-    })),
-    {
-      key: 'is_active',
-      header: 'Status',
-      cell: (r) => (
-        <span data-testid={`status-${r.id}`} className={r.is_active ? 'text-green-700 dark:text-green-400' : 'text-zinc-500'}>
-          {r.is_active ? 'Active' : 'Inactive'}
-        </span>
-      ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      className: 'text-right',
-      cell: (r) => (
-        <span className="flex justify-end gap-2">
-          <Button variant="ghost" data-testid={`edit-${r.id}`} onClick={() => setEditing(r)}>
-            Edit
-          </Button>
-          <Button
-            variant="secondary"
-            data-testid={`toggle-${r.id}`}
-            onClick={() => toggleActive(r)}
-            disabled={pending}
-          >
-            {r.is_active ? 'Deactivate' : 'Activate'}
-          </Button>
-        </span>
-      ),
-    },
-  ];
+  // Shared by the "Add" dialog (current = null) and each row's "Edit" dialog.
+  const editForm = (current: MasterRecord | null) => (
+    <form action={submit} data-testid={`form-${masterType}`} className="grid gap-4">
+      <DialogHeader>
+        <DialogTitle>
+          {current ? 'Edit' : 'Add'} {title.toLowerCase()}
+        </DialogTitle>
+        <DialogDescription>Changes are audited.</DialogDescription>
+      </DialogHeader>
+      <FieldGroup className="grid gap-4 sm:grid-cols-2">
+        {fields.map((f) => (
+          <Field key={f.key}>
+            <FieldLabel htmlFor={`${masterType}-${f.key}`}>
+              {f.label}
+              {f.required && <span className="text-destructive">*</span>}
+            </FieldLabel>
+            <Input
+              id={`${masterType}-${f.key}`}
+              name={f.key}
+              type={f.type ?? 'text'}
+              step={f.step}
+              required={f.required}
+              defaultValue={current ? String(current[f.key] ?? '') : ''}
+              data-testid={`input-${f.key}`}
+            />
+          </Field>
+        ))}
+        <Label className="font-normal sm:col-span-2">
+          <Checkbox checked={active} onCheckedChange={setActive} /> Active
+        </Label>
+      </FieldGroup>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={() => setEditing(null)} disabled={pending}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={pending} data-testid={`save-${masterType}`}>
+          {pending ? 'Saving…' : 'Save'}
+        </Button>
+      </div>
+    </form>
+  );
 
-  const current = editing === 'new' ? null : editing;
+  const editDialogProps = (target: MasterRecord | 'new') => ({
+    open: target === 'new' ? editing === 'new' : editing !== 'new' && editing?.id === target.id,
+    onOpenChange: (open: boolean) => {
+      if (pending) return;
+      if (open) openEdit(target);
+      else setEditing(null);
+    },
+  });
 
   return (
-    <section className="space-y-3" data-testid={`master-${masterType}`}>
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium">{title}</h2>
-        <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            data-testid={`bulk-${masterType}`}
-            onClick={() => setBulkOpen((v) => !v)}
-          >
-            {bulkOpen ? 'Close bulk' : 'Bulk upload'}
-          </Button>
-          <Button data-testid={`add-${masterType}`} onClick={() => setEditing('new')}>
-            Add
-          </Button>
-        </div>
-      </div>
-
-      {bulkOpen && (
-        <form action={submitBulk} data-testid={`bulk-form-${masterType}`} className="space-y-2 rounded-lg border border-black/10 p-4 dark:border-white/15">
-          <label htmlFor={`bulk-csv-${masterType}`} className="block text-sm font-medium">
-            Paste CSV (header row + records)
-          </label>
-          <textarea
-            id={`bulk-csv-${masterType}`}
-            name="csv"
-            rows={5}
-            data-testid={`bulk-csv-${masterType}`}
-            className="w-full rounded-md border border-black/15 bg-transparent p-2 font-mono text-xs outline-none focus:border-zinc-500 dark:border-white/20"
-            placeholder={`Columns: ${fields.map((f) => f.key).join(', ')}, is_active`}
-          />
-          <Button type="submit" disabled={pending} data-testid={`bulk-submit-${masterType}`}>
-            {pending ? 'Uploading…' : 'Upload'}
-          </Button>
-        </form>
-      )}
-
-      {editing !== null && (
-        <form
-          action={submit}
-          data-testid={`form-${masterType}`}
-          className="grid max-w-2xl gap-3 rounded-lg border border-black/10 p-4 sm:grid-cols-2 dark:border-white/15"
-        >
-          {current && <input type="hidden" name="id" value={current.id} />}
-          {fields.map((f) => (
-            <Field key={f.key} label={f.label} htmlFor={f.key} required={f.required}>
-              <Input
-                id={f.key}
-                name={f.key}
-                type={f.type ?? 'text'}
-                step={f.step}
-                required={f.required}
-                defaultValue={current ? String(current[f.key] ?? '') : ''}
-                data-testid={`input-${f.key}`}
-              />
-            </Field>
-          ))}
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              name="is_active"
-              defaultChecked={current ? Boolean(current.is_active) : true}
-            />
-            Active
-          </label>
-          <div className="flex items-end gap-2 sm:col-span-2">
-            <Button type="submit" disabled={pending} data-testid={`save-${masterType}`}>
-              {pending ? 'Saving…' : 'Save'}
-            </Button>
-            <Button variant="secondary" onClick={() => setEditing(null)} disabled={pending}>
-              Cancel
-            </Button>
-          </div>
-        </form>
-      )}
-
-      <DataTable
-        columns={columns}
-        rows={rows}
-        rowKey={(r) => r.id}
-        page={0}
-        pageSize={rows.length || 1}
-        total={rows.length}
-        onPageChange={() => {}}
-        emptyMessage={`No ${title.toLowerCase()} yet.`}
-      />
-    </section>
+    <Card data-testid={`master-${masterType}`}>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        <CardAction className="flex gap-2">
+          <Dialog open={bulkOpen} onOpenChange={(open) => !pending && setBulkOpen(open)}>
+            <DialogTrigger render={<Button variant="outline" data-testid={`bulk-${masterType}`} />}>
+              Bulk upload
+            </DialogTrigger>
+            <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl">
+              <form action={submitBulk} data-testid={`bulk-form-${masterType}`} className="grid gap-4">
+                <DialogHeader>
+                  <DialogTitle>Bulk upload {title.toLowerCase()}</DialogTitle>
+                  <DialogDescription>Paste CSV with a header row followed by records.</DialogDescription>
+                </DialogHeader>
+                <Field>
+                  <FieldLabel htmlFor={`bulk-csv-${masterType}`}>CSV</FieldLabel>
+                  <Textarea
+                    id={`bulk-csv-${masterType}`}
+                    name="csv"
+                    rows={6}
+                    data-testid={`bulk-csv-${masterType}`}
+                    className="font-mono text-xs"
+                    placeholder={`Columns: ${fields.map((f) => f.key).join(', ')}, is_active`}
+                  />
+                </Field>
+                <div className="flex justify-end gap-2">
+                  <Button type="submit" disabled={pending} data-testid={`bulk-submit-${masterType}`}>
+                    {pending ? 'Uploading…' : 'Upload'}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+          <Dialog {...editDialogProps('new')}>
+            <DialogTrigger render={<Button data-testid={`add-${masterType}`} />}>Add</DialogTrigger>
+            <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl">
+              {editForm(null)}
+            </DialogContent>
+          </Dialog>
+        </CardAction>
+      </CardHeader>
+      <CardContent className="px-0">
+        <Table data-testid="data-table">
+          <TableHeader>
+            <TableRow>
+              {fields.map((f, i) => (
+                <TableHead key={f.key} className={i === 0 ? 'pl-4' : undefined}>
+                  {f.label}
+                </TableHead>
+              ))}
+              <TableHead>Status</TableHead>
+              <TableHead className="pr-4 text-right">
+                <span className="sr-only">Actions</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={fields.length + 2} className="py-8 text-center text-muted-foreground" data-testid="data-table-empty">
+                  No {title.toLowerCase()} yet.
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map((r) => (
+                <TableRow key={r.id}>
+                  {fields.map((f, i) => (
+                    <TableCell key={f.key} className={i === 0 ? 'pl-4' : undefined}>
+                      {String(r[f.key] ?? '—')}
+                    </TableCell>
+                  ))}
+                  <TableCell>
+                    <Badge variant={r.is_active ? 'success' : 'outline'} data-testid={`status-${r.id}`}>
+                      {r.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="pr-4 text-right">
+                    <div className="flex justify-end gap-2">
+                      <Dialog {...editDialogProps(r)}>
+                        <DialogTrigger render={<Button variant="ghost" size="sm" data-testid={`edit-${r.id}`} />}>
+                          Edit
+                        </DialogTrigger>
+                        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl">
+                          {editForm(r)}
+                        </DialogContent>
+                      </Dialog>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        data-testid={`toggle-${r.id}`}
+                        onClick={() => toggleActive(r)}
+                        disabled={pending}
+                      >
+                        {r.is_active ? 'Deactivate' : 'Activate'}
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }

@@ -62,7 +62,8 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         key: 'challan',
         label: 'M-Challan',
         href: '/challan',
-        roles: ['admin'],
+        // Mirrors challans RLS: admin + dept_head write, so both need the entry point.
+        roles: ['admin', 'dept_head'],
         requiresFlag: 'challanEnabled',
       },
     ],
@@ -116,4 +117,33 @@ export function navForRole(role: Role | null, flags: NavFlags = {}): NavSection[
     ...section,
     items: section.items.filter((item) => canSeeNavItem(item, role, flags)),
   })).filter((section) => section.items.length > 0);
+}
+
+export interface PageTitle {
+  title: string;
+  description: string;
+}
+
+/**
+ * Header title + subtitle per route, longest prefix first so sub-routes (travel) win over
+ * their parent. Detail pages (/attendance/<userId>) fall back to their section's title.
+ */
+const PAGE_TITLES: readonly (PageTitle & { prefix: string })[] = [
+  { prefix: '/inspections/travel', title: 'Travel & Activity', description: 'Route and distance travelled by field staff for a day.' },
+  { prefix: '/dashboard', title: 'Field operations dashboard', description: 'Monitor inspections, field teams, attendance and system performance.' },
+  { prefix: '/inspections', title: 'Inspections', description: 'Create, assign, review and audit field inspection records.' },
+  { prefix: '/attendance', title: 'Attendance', description: 'Monitor punches, flag exceptions and apply corrections.' },
+  { prefix: '/challan', title: 'M-Challan', description: 'Create, issue and track challans. Generate a challan PDF with a unique reference number.' },
+  { prefix: '/reports', title: 'MIS Reports', description: 'Filter, preview and export inspection & attendance data.' },
+  { prefix: '/audit', title: 'Audit Trail', description: 'Append-only record of administrative and data actions across the system.' },
+  { prefix: '/masters', title: 'Master Data', description: 'Manage departments, geo-fences and other reference data.' },
+  { prefix: '/users', title: 'Users & Roles', description: 'Manage user roles and department assignments.' },
+  { prefix: '/notifications', title: 'Notifications', description: 'Configure notification templates and escalation rules.' },
+  { prefix: '/system', title: 'System Health', description: 'Integration, synchronization and operational status.' },
+];
+
+export function pageTitleFor(pathname: string): PageTitle | null {
+  return (
+    PAGE_TITLES.find((p) => pathname === p.prefix || pathname.startsWith(`${p.prefix}/`)) ?? null
+  );
 }

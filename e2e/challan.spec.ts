@@ -64,19 +64,21 @@ test('admin: full challan lifecycle — create → issue → pay → PDF', async
   await page.getByTestId('challan-violation').fill(marker);
   await page.getByTestId('challan-save').click();
 
-  // Lands on the detail page in draft status.
+  // Opens in the detail drawer on the list route, in draft status.
+  await expect(page).toHaveURL(/\/challan\?.*challan=/);
+  await expect(page.getByTestId('challan-drawer')).toBeVisible();
   await expect(page.getByTestId('challan-ref')).toBeVisible();
   await expect(page.getByTestId('challan-ref')).toHaveText(/^CHL-\d{4}-\d{6}$/);
   await expect(page.getByTestId('challan-status')).toHaveText(/draft/i);
 
   // Issue it.
   await page.getByTestId('challan-action-issue').click();
-  await expect(page.getByTestId('toast').filter({ hasText: /issued/i })).toBeVisible();
+  await expect(page.locator('[data-sonner-toast]').filter({ hasText: /issued/i })).toBeVisible();
   await expect(page.getByTestId('challan-status')).toHaveText(/issued/i);
 
   // Mark paid (terminal).
   await page.getByTestId('challan-action-pay').click();
-  await expect(page.getByTestId('toast').filter({ hasText: /paid/i })).toBeVisible();
+  await expect(page.locator('[data-sonner-toast]').filter({ hasText: /paid/i })).toBeVisible();
   await expect(page.getByTestId('challan-status')).toHaveText(/paid/i);
   await expect(page.getByTestId('challan-terminal')).toBeVisible();
 

@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { connection } from 'next/server';
 import type { Database } from './database.types';
 
 /**
@@ -7,6 +8,9 @@ import type { Database } from './database.types';
  *
  * Connects to the existing shared "Auda RFP" project. Reads/writes the session
  * from cookies so SSR auth stays in sync with the browser. RLS enforces access.
+ *
+ * Waits for the real request first: the client checks the session token's expiry with
+ * Date.now(), which Cache Components rejects during prerender.
  */
 export async function createClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -19,6 +23,7 @@ export async function createClient() {
     );
   }
 
+  await connection();
   const cookieStore = await cookies();
 
   return createServerClient<Database>(url, key, {

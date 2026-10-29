@@ -2,8 +2,20 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
-import { Button, Field, Input, Select } from '@/components/ui/Form';
-import { useToast } from '@/components/ui/Toast';
+import { Plus } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { saveChallanAction } from './actions';
 import type { ChallanTypeOption } from '@/lib/data/challans';
 
@@ -12,7 +24,16 @@ export interface DeptOption {
   name: string;
 }
 
-/** Create a new challan (draft). Opens the detail page on success. */
+const TEXT_FIELDS: { name: string; label: string; type?: string; step?: string }[] = [
+  { name: 'offender_name', label: 'Offender name' },
+  { name: 'offender_contact', label: 'Offender contact' },
+  { name: 'location_name', label: 'Location' },
+  { name: 'amount', label: 'Amount (₹)', type: 'number', step: '0.01' },
+  { name: 'latitude', label: 'Latitude', type: 'number', step: 'any' },
+  { name: 'longitude', label: 'Longitude', type: 'number', step: 'any' },
+];
+
+/** "New challan" button opening a create-draft dialog. Opens the detail page on success. */
 export function CreateChallan({
   challanTypes,
   departments,
@@ -20,84 +41,125 @@ export function CreateChallan({
   challanTypes: ChallanTypeOption[];
   departments: DeptOption[];
 }) {
-  const { show } = useToast();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [ruleSection, setRuleSection] = useState('');
+  const [departmentId, setDepartmentId] = useState('');
+
+  const typeItems = [{ value: '', label: '—' }, ...challanTypes.map((t) => ({ value: t.id, label: t.name }))];
+  const deptItems = [{ value: '', label: '—' }, ...departments.map((d) => ({ value: d.id, label: d.name }))];
+
+  // Picking a challan type pre-fills its configured rule/section and department.
+  function selectType(typeId: string) {
+    const type = challanTypes.find((t) => t.id === typeId);
+    if (!type) return;
+    if (type.rule_section) setRuleSection(type.rule_section);
+    if (type.department_id) setDepartmentId(type.department_id);
+  }
 
   function submit(formData: FormData) {
     startTransition(async () => {
       const res = await saveChallanAction({ ok: false, error: null }, formData);
       if (res.ok && res.id) {
-        show('Challan created (draft)', 'success');
-        router.push(`/challan/${res.id}`);
+        toast.success('Challan created (draft)');
+        setOpen(false);
+        router.push(`/challan?challan=${res.id}`, { scroll: false });
       } else {
-        show(res.error ?? 'Could not create challan', 'error');
+        toast.error(res.error ?? 'Could not create challan');
       }
     });
   }
 
-  if (!open) {
-    return (
-      <Button data-testid="new-challan" onClick={() => setOpen(true)}>
-        New challan
-      </Button>
-    );
-  }
-
   return (
-    <form action={submit} data-testid="challan-form" className="grid max-w-2xl gap-3 rounded-lg border border-black/10 p-4 sm:grid-cols-2 dark:border-white/15">
-      <Field label="Violation" htmlFor="violation" required>
-        <Input id="violation" name="violation" required data-testid="challan-violation" />
-      </Field>
-      <Field label="Rule / section" htmlFor="rule_section">
-        <Input id="rule_section" name="rule_section" />
-      </Field>
-      <Field label="Challan type" htmlFor="challan_type_id">
-        <Select id="challan_type_id" name="challan_type_id" defaultValue="">
-          <option value="">—</option>
-          {challanTypes.map((t) => (
-            <option key={t.id} value={t.id}>{t.name}</option>
-          ))}
-        </Select>
-      </Field>
-      <Field label="Department" htmlFor="department_id">
-        <Select id="department_id" name="department_id" defaultValue="">
-          <option value="">—</option>
-          {departments.map((d) => (
-            <option key={d.id} value={d.id}>{d.name}</option>
-          ))}
-        </Select>
-      </Field>
-      <Field label="Offender name" htmlFor="offender_name">
-        <Input id="offender_name" name="offender_name" />
-      </Field>
-      <Field label="Offender contact" htmlFor="offender_contact">
-        <Input id="offender_contact" name="offender_contact" />
-      </Field>
-      <Field label="Location" htmlFor="location_name">
-        <Input id="location_name" name="location_name" />
-      </Field>
-      <Field label="Amount (₹)" htmlFor="amount">
-        <Input id="amount" name="amount" type="number" step="0.01" />
-      </Field>
-      <Field label="Latitude" htmlFor="latitude">
-        <Input id="latitude" name="latitude" type="number" step="any" />
-      </Field>
-      <Field label="Longitude" htmlFor="longitude">
-        <Input id="longitude" name="longitude" type="number" step="any" />
-      </Field>
-      <Field label="Reason / remarks" htmlFor="reason">
-        <Input id="reason" name="reason" />
-      </Field>
-      <div className="flex items-end gap-2 sm:col-span-2">
-        <Button type="submit" disabled={pending} data-testid="challan-save">
-          {pending ? 'Creating…' : 'Create draft'}
-        </Button>
-        <Button variant="secondary" onClick={() => setOpen(false)} disabled={pending}>
-          Cancel
-        </Button>
-      </div>
-    </form>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger render={<Button size="lg" data-testid="new-challan" />}>
+        <Plus /> New challan
+      </DialogTrigger>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
+        <form action={submit} data-testid="challan-form" className="grid gap-4">
+          <DialogHeader>
+            <DialogTitle>New challan</DialogTitle>
+            <DialogDescription>Creates a draft. Issue it from the challan page.</DialogDescription>
+          </DialogHeader>
+          <FieldGroup className="grid gap-3 sm:grid-cols-2">
+            <Field>
+              <FieldLabel htmlFor="violation">
+                Violation <span className="text-destructive">*</span>
+              </FieldLabel>
+              <Input id="violation" name="violation" required className="h-9" data-testid="challan-violation" />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="rule_section">Rule / section</FieldLabel>
+              <Input
+                id="rule_section"
+                name="rule_section"
+                className="h-9"
+                value={ruleSection}
+                onChange={(e) => setRuleSection(e.target.value)}
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="challan_type_id">Challan type</FieldLabel>
+              <Select
+                name="challan_type_id"
+                items={typeItems}
+                defaultValue=""
+                onValueChange={(v) => selectType(v == null ? '' : String(v))}
+              >
+                <SelectTrigger id="challan_type_id" className="h-9 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent alignItemWithTrigger={false}>
+                  {typeItems.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="department_id">Department</FieldLabel>
+              <Select
+                name="department_id"
+                items={deptItems}
+                value={departmentId}
+                onValueChange={(v) => setDepartmentId(v == null ? '' : String(v))}
+              >
+                <SelectTrigger id="department_id" className="h-9 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent alignItemWithTrigger={false}>
+                  {deptItems.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            {TEXT_FIELDS.map((f) => (
+              <Field key={f.name}>
+                <FieldLabel htmlFor={f.name}>{f.label}</FieldLabel>
+                <Input id={f.name} name={f.name} type={f.type} step={f.step} className="h-9" />
+              </Field>
+            ))}
+            <Field className="sm:col-span-2">
+              <FieldLabel htmlFor="reason">Reason / remarks</FieldLabel>
+              <Input id="reason" name="reason" className="h-9" />
+            </Field>
+          </FieldGroup>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={pending} data-testid="challan-save">
+              {pending ? 'Creating…' : 'Create draft'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

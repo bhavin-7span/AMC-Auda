@@ -43,7 +43,7 @@ export async function correctAttendanceAction(
       punchType,
       insideGeofence,
     });
-    revalidatePath('/attendance');
+    revalidatePath('/attendance', 'layout');
     return { ok: true, error: null };
   } catch (e) {
     return { ok: false, error: cleanError(e) };
@@ -68,7 +68,7 @@ export async function updateRulesAction(
   try {
     const supabase = await createClient();
     await updateAttendanceRules(supabase, payload);
-    revalidatePath('/attendance');
+    revalidatePath('/attendance', 'layout');
     return { ok: true, error: null };
   } catch (e) {
     return { ok: false, error: cleanError(e) };

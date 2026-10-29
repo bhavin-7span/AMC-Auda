@@ -2,7 +2,9 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { getAssignableStaff, getTravelReport, type AssignableStaff, type TravelReport } from '@/lib/data/inspections';
 import { MapContainer } from '@/components/ui/MapContainer';
-import { Widget } from '@/components/ui/Widget';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TravelForm } from './TravelForm';
 
 /**
@@ -37,18 +39,12 @@ export default async function TravelPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link href="/inspections" className="text-sm text-zinc-500 hover:underline">
-          ← Inspections
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Travel &amp; Activity</h1>
-        <p className="text-zinc-600 dark:text-zinc-400">
-          Route and distance travelled by field staff for a day.
-        </p>
-      </div>
+      <Button variant="ghost" size="sm" className="-ml-2" nativeButton={false} render={<Link href="/inspections" />}>
+        <ArrowLeft /> Inspections
+      </Button>
 
       {error ? (
-        <p className="rounded-md border border-red-500/40 bg-red-50 px-3 py-2 text-sm text-red-900 dark:bg-red-950/60 dark:text-red-100">
+        <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
       ) : (
@@ -68,8 +64,22 @@ export default async function TravelPage({
           {report && report.enabled && (
             <div className="space-y-4" data-testid="travel-result">
               <div className="grid gap-3 sm:grid-cols-2">
-                <Widget title="Distance travelled" value={`${(report.distance_m / 1000).toFixed(2)} km`} />
-                <Widget title="Location points" value={report.count} />
+                {[
+                  { title: 'Distance travelled', value: `${(report.distance_m / 1000).toFixed(2)} km` },
+                  { title: 'Location points', value: report.count },
+                ].map((s) => (
+                  <Card key={s.title} size="sm" data-testid="widget">
+                    <CardHeader>
+                      <CardDescription>{s.title}</CardDescription>
+                      <CardTitle
+                        className="text-2xl font-semibold tabular-nums group-data-[size=sm]/card:text-2xl"
+                        data-testid="widget-value"
+                      >
+                        {s.value}
+                      </CardTitle>
+                    </CardHeader>
+                  </Card>
+                ))}
               </div>
               <MapContainer
                 label={`Route — ${report.count} points`}

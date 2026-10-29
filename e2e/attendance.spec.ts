@@ -30,6 +30,8 @@ test('admin sees the attendance log and rules', async ({ page }) => {
   await page.goto('/attendance');
   await expect(page.getByRole('heading', { name: 'Attendance', exact: true })).toBeVisible();
   await expect(page.getByTestId('data-table')).toBeVisible();
+  await expect(page.getByTestId('rules-section')).toBeVisible();
+  await page.getByTestId('rules-edit').click();
   await expect(page.getByTestId('rules-form')).toBeVisible();
 });
 
