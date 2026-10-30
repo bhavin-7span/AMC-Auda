@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RangePicker } from '../AttendanceFilters';
+import { DayMap } from '../DayMap';
 import { PunchLog } from '../PunchLog';
 import { STATUS_BADGE, fmtDate, fmtTime } from '../format';
 
@@ -182,7 +183,10 @@ export default async function EmployeeAttendancePage({
                   </CardHeader>
                   <CardContent className="px-0">
                     {day ? (
-                      <PunchLog punches={day.punches} />
+                      <>
+                        <PunchLog punches={day.punches} />
+                        <DayMap date={date} punches={day.punches} />
+                      </>
                     ) : (
                       <p className="px-4 py-3 text-sm text-muted-foreground">No punches recorded.</p>
                     )}

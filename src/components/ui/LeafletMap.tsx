@@ -36,12 +36,15 @@ const icon = L.icon({
 export default function LeafletMap({
   points,
   route = false,
+  fitAll = false,
   height = 320,
   label = 'Map',
   onPick,
 }: {
   points: MapPoint[];
   route?: boolean;
+  /** Frame every point instead of centring on the first one. */
+  fitAll?: boolean;
   height?: number;
   label?: string;
   /** When set, clicking the map reports the clicked coordinates (location picker). */
@@ -137,11 +140,16 @@ export default function LeafletMap({
     }
     // Centre on the first point. A picker keeps the user's view once centred, so
     // moving the marker does not jump the map.
-    if (valid.length && !(pickable && centeredRef.current)) {
+    if (fitAll && valid.length > 1) {
+      map.fitBounds(L.latLngBounds(valid.map((p) => [p.lat, p.lon] as L.LatLngTuple)), {
+        padding: [32, 32],
+        maxZoom: 17,
+      });
+    } else if (valid.length && !(pickable && centeredRef.current)) {
       map.setView([valid[0].lat, valid[0].lon], pickable ? Math.max(map.getZoom(), 14) : 14);
       centeredRef.current = true;
     }
-  }, [points, route, pickable]);
+  }, [points, route, pickable, fitAll]);
 
   return (
     // `isolate` gives the map its own stacking context: Leaflet's panes and controls use
