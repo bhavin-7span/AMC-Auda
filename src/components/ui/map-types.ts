@@ -5,4 +5,6 @@ export interface MapPoint {
   /** Stable key + popup label (optional). */
   id?: string;
   label?: string;
+  /** ISO timestamp. Formatted on the client so prerender does not read the clock. */
+  recordedAt?: string;
 }

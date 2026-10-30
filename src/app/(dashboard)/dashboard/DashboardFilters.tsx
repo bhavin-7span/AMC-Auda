@@ -1,8 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { FilterBar } from '@/components/ui/FilterBar';
-import { Button, Field, Input, Select } from '@/components/ui/Form';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export interface DeptOption {
   id: string;
@@ -12,6 +15,10 @@ export interface DeptOption {
 /**
  * Dashboard filter bar: department + date range. Submits via the URL so the server
  * page re-queries admin_dashboard_widgets with the new scope. Clearing resets to /dashboard.
+ *
+ * React resets a form after its action runs, which would snap the fields back to the
+ * previous defaults. Keying the form on the applied filters remounts it with the new
+ * values, so the chosen department and dates stay selected.
  */
 export function DashboardFilters({
   departments,
@@ -21,6 +28,10 @@ export function DashboardFilters({
   current: { department?: string; from?: string; to?: string };
 }) {
   const router = useRouter();
+  const deptItems = [
+    { value: '', label: 'All departments' },
+    ...departments.map((d) => ({ value: d.id, label: d.name })),
+  ];
 
   function apply(formData: FormData) {
     const params = new URLSearchParams();
@@ -34,28 +45,55 @@ export function DashboardFilters({
   }
 
   return (
-    <form action={apply}>
-      <FilterBar onClear={() => router.push('/dashboard')}>
-        <Field label="Department" htmlFor="department">
-          <Select id="department" name="department" defaultValue={current.department ?? ''}>
-            <option value="">All departments</option>
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="From" htmlFor="from">
-          <Input id="from" name="from" type="date" defaultValue={current.from ?? ''} />
-        </Field>
-        <Field label="To" htmlFor="to">
-          <Input id="to" name="to" type="date" defaultValue={current.to ?? ''} />
-        </Field>
-        <Button type="submit" data-testid="dashboard-apply">
-          Apply
-        </Button>
-      </FilterBar>
-    </form>
+    <Card className="bg-card">
+      <CardContent>
+        <form
+          key={`${current.department ?? ''}|${current.from ?? ''}|${current.to ?? ''}`}
+          action={apply}
+          className="flex flex-wrap items-end gap-3"
+        >
+          <div className="grid gap-1.5">
+            <Label htmlFor="department">Department</Label>
+            <Select name="department" items={deptItems} defaultValue={current.department ?? ''}>
+              <SelectTrigger id="department" className="h-8 min-w-44" data-testid="dashboard-department">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger={false}>
+                {deptItems.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="from">From</Label>
+            <Input
+              id="from"
+              name="from"
+              type="date"
+              defaultValue={current.from ?? ''}
+              className="w-40"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="to">To</Label>
+            <Input id="to" name="to" type="date" defaultValue={current.to ?? ''} className="w-40" />
+          </div>
+          <Button type="submit" data-testid="dashboard-apply">
+            Apply
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="ml-auto"
+            onClick={() => router.push('/dashboard')}
+          >
+            Clear filters
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

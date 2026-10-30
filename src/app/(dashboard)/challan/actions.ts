@@ -2,7 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { upsertChallan, transitionChallan } from '@/lib/data/challans';
+import { getFeatureFlags } from '@/lib/config/feature-flags';
+import { getChallanDetail, transitionChallan, upsertChallan, type ChallanDetail } from '@/lib/data/challans';
 
 export interface ChallanActionState {
   ok: boolean;
@@ -68,10 +69,24 @@ export async function transitionChallanAction(
   try {
     const supabase = await createClient();
     await transitionChallan(supabase, id, action);
-    revalidatePath(`/challan/${id}`);
     revalidatePath('/challan');
     return { ok: true, error: null };
   } catch (e) {
     return { ok: false, error: cleanError(e) };
+  }
+}
+
+export type ChallanDrawerData = { ok: true; detail: ChallanDetail } | { ok: false; error: string };
+
+/** Detail for the challan drawer; role-scoped by admin_challan_detail, gated on the flag. */
+export async function loadChallanDrawer(id: string): Promise<ChallanDrawerData> {
+  const flags = await getFeatureFlags();
+  if (!flags.challanEnabled) return { ok: false, error: 'Challans are not enabled.' };
+  try {
+    const supabase = await createClient();
+    return { ok: true, detail: await getChallanDetail(supabase, id) };
+  } catch (e) {
+    const m = cleanError(e);
+    return { ok: false, error: /not found|P0002/i.test(m) ? 'Challan not found.' : m };
   }
 }

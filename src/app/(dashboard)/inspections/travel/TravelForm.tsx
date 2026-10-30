@@ -1,8 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { FilterBar } from '@/components/ui/FilterBar';
-import { Button, Field, Input, Select } from '@/components/ui/Form';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Field, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { AssignableStaff } from '@/lib/data/inspections';
 
 /**
@@ -17,6 +20,7 @@ export function TravelForm({
   current: { user?: string; date?: string };
 }) {
   const router = useRouter();
+  const staffItems = staff.map((s) => ({ value: s.user_id, label: `${s.full_name} (${s.employee_id})` }));
 
   function apply(formData: FormData) {
     const params = new URLSearchParams();
@@ -28,25 +32,44 @@ export function TravelForm({
   }
 
   return (
-    <form action={apply}>
-      <FilterBar onClear={() => router.push('/inspections/travel')}>
-        <Field label="Staff" htmlFor="user">
-          <Select id="user" name="user" defaultValue={current.user ?? ''} data-testid="travel-user">
-            <option value="">Select staff…</option>
-            {staff.map((s) => (
-              <option key={s.user_id} value={s.user_id}>
-                {s.full_name} ({s.employee_id})
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Date" htmlFor="date">
-          <Input id="date" name="date" type="date" defaultValue={current.date ?? ''} />
-        </Field>
-        <Button type="submit" data-testid="travel-apply">
-          View route
-        </Button>
-      </FilterBar>
-    </form>
+    <Card data-testid="filter-bar">
+      <CardContent>
+        {/* Keyed on the applied filters: React resets the form after the action, so remount with the new defaults. */}
+        <form key={JSON.stringify(current)} action={apply} className="flex flex-wrap items-end gap-3">
+          <Field className="w-72">
+            <FieldLabel htmlFor="user">Staff</FieldLabel>
+            <Select name="user" items={staffItems} defaultValue={current.user ?? null}>
+              <SelectTrigger id="user" className="h-9 w-full" data-testid="travel-user">
+                <SelectValue placeholder="Select staff…" />
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger={false}>
+                {staffItems.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field className="w-44">
+            <FieldLabel htmlFor="date">Date</FieldLabel>
+            <Input id="date" name="date" type="date" className="h-9" defaultValue={current.date ?? ''} />
+          </Field>
+          <Button type="submit" size="lg" data-testid="travel-apply">
+            View route
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="lg"
+            className="ml-auto"
+            data-testid="filter-clear"
+            onClick={() => router.push('/inspections/travel')}
+          >
+            Clear filters
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

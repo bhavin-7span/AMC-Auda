@@ -1,26 +1,192 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-heading: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-8: var(--chart-8);
+  --color-chart-7: var(--chart-7);
+  --color-chart-6: var(--chart-6);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-destructive-soft: var(--destructive-soft);
+  --shadow-card: var(--shadow-card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  color-scheme: light;
+  /* Brand: primary (navy) and secondary (amber) are fixed; neutrals follow the
+     AUDA Field Operations design. */
+  --background: #f4f6f9;
+  --foreground: #172433;
+  --card: #ffffff;
+  --card-foreground: #172433;
+  --popover: #ffffff;
+  --popover-foreground: #172433;
+  --primary: #0c3065;
+  --primary-foreground: #ffffff;
+  --secondary: #ffa707;
+  --secondary-foreground: #0c3065;
+  --muted: #f4f6f9;
+  --muted-foreground: #5d6b7e;
+  --accent: #eaf2f8;
+  --accent-foreground: #0c3065;
+  --destructive: #b53d48;
+  --destructive-soft: #fdecee;
+  --success: #218463;
+  --success-soft: #e8f6f0;
+  --warning: #b26b16;
+  --warning-soft: #fff4de;
+  --info: #245a85;
+  --info-soft: #eaf2f8;
+  --border: #dfe5ec;
+  --input: #dfe5ec;
+  --ring: #0c3065;
+  --shadow-card: 0 1px 2px rgb(20 39 61 / 4%), 0 8px 24px rgb(20 39 61 / 4%);
+  --chart-1: #0c3065;
+  --chart-2: #218463;
+  --chart-3: #ffa707;
+  --chart-4: #b53d48;
+  --chart-5: #257f9b;
+  --chart-6: #6b4c9a;
+  --chart-7: #b26b16;
+  --chart-8: #8b97a7;
+  --radius: 0.5rem;
+  --sidebar: #0c3065;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffa707;
+  --sidebar-primary-foreground: #0c3065;
+  --sidebar-accent: rgb(255 255 255 / 12%);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgb(255 255 255 / 10%);
+  --sidebar-ring: #ffa707;
+}
+
+.dark,
+:root:where(.dark) {
+  color-scheme: dark;
+  --background: oklch(0.17 0.02 260);
+  --foreground: oklch(0.97 0.005 250);
+  --card: oklch(0.22 0.028 262);
+  --card-foreground: oklch(0.97 0.005 250);
+  --popover: oklch(0.22 0.028 262);
+  --popover-foreground: oklch(0.97 0.005 250);
+  --primary: oklch(0.74 0.13 250);
+  --primary-foreground: oklch(0.18 0.04 260);
+  --secondary: oklch(0.28 0.03 260);
+  --secondary-foreground: oklch(0.97 0.005 250);
+  --muted: oklch(0.28 0.025 260);
+  --muted-foreground: oklch(0.76 0.02 250);
+  --accent: oklch(0.32 0.045 255);
+  --accent-foreground: oklch(0.97 0.005 250);
+  --destructive: oklch(0.7 0.18 25);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.65 0.12 255);
+  --chart-1: oklch(0.72 0.14 255);
+  --chart-2: oklch(0.76 0.1 220);
+  --chart-3: oklch(0.82 0.14 85);
+  --chart-4: oklch(0.74 0.14 305);
+  --chart-5: oklch(0.76 0.11 190);
+  --chart-6: oklch(0.76 0.16 50);
+  --chart-7: oklch(0.76 0.14 155);
+  --chart-8: oklch(0.72 0.02 260);
+  --sidebar: oklch(0.2 0.032 262);
+  --sidebar-foreground: oklch(0.96 0.005 250);
+  --sidebar-primary: oklch(0.74 0.13 250);
+  --sidebar-primary-foreground: oklch(0.16 0.03 260);
+  --sidebar-accent: oklch(0.3 0.05 255);
+  --sidebar-accent-foreground: oklch(0.97 0.005 250);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.65 0.12 255);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Custom scrollbar: the track and arrow buttons are not painted, only the thumb. */
+.scrollbar-thumb::-webkit-scrollbar {
+  width: 0.625rem;
+  height: 0.625rem;
+  background-color: transparent;
+}
+
+.scrollbar-thumb::-webkit-scrollbar-track,
+.scrollbar-thumb::-webkit-scrollbar-track-piece,
+.scrollbar-thumb::-webkit-scrollbar-corner {
+  background-color: transparent;
+}
+
+.scrollbar-thumb::-webkit-scrollbar-thumb {
+  border: 0.1875rem solid transparent;
+  border-radius: 9999px;
+  background-color: rgb(255 255 255 / 55%);
+  background-clip: padding-box;
+}
+
+.scrollbar-thumb::-webkit-scrollbar-button,
+.scrollbar-thumb::-webkit-scrollbar-button:single-button,
+.scrollbar-thumb::-webkit-scrollbar-button:vertical:start:decrement,
+.scrollbar-thumb::-webkit-scrollbar-button:vertical:end:increment,
+.scrollbar-thumb::-webkit-scrollbar-button:horizontal:start:decrement,
+.scrollbar-thumb::-webkit-scrollbar-button:horizontal:end:increment {
+  display: none;
+  width: 0;
+  height: 0;
+  background-color: transparent;
 }

@@ -30,6 +30,9 @@ test('admin sees the audit trail with filters', async ({ page }) => {
   await login(page);
   await page.goto('/audit');
   await expect(page.getByRole('heading', { name: 'Audit Trail' })).toBeVisible();
+  await expect(page.getByTestId('audit-search')).toBeVisible();
+  // Filters live in a drawer opened from the toolbar's filter icon.
+  await page.getByTestId('filter-toggle').click();
   await expect(page.getByTestId('audit-apply')).toBeVisible();
   await expect(page.getByTestId('data-table')).toBeVisible();
 });

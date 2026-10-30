@@ -4,7 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 /**
  * Phase 12.3 — Accessibility pass (automated).
  *
- * Runs axe-core against guest-reachable surfaces (login, UI-kit showcase). Asserts no
+ * Runs axe-core against guest-reachable surfaces (login). Asserts no
  * serious/critical WCAG violations. Full WCAG conformance still requires manual assistive-
  * technology testing beyond automated checks — this catches the mechanical issues
  * (labels, contrast, roles, names). Authenticated pages are axe-checked under a skip-gate.
@@ -27,12 +27,6 @@ async function assertNoSeriousViolations(page: import('@playwright/test').Page) 
 test('login page has no serious accessibility violations', async ({ page }) => {
   await page.goto('/login');
   await expect(page.getByTestId('login-form')).toBeVisible();
-  await assertNoSeriousViolations(page);
-});
-
-test('UI kit showcase has no serious accessibility violations', async ({ page }) => {
-  await page.goto('/kit');
-  await expect(page.getByRole('heading', { name: 'UI Kit' })).toBeVisible();
   await assertNoSeriousViolations(page);
 });
 

@@ -24,11 +24,6 @@ test('guest is redirected from /inspections to /login', async ({ page }) => {
   await expect(page).toHaveURL(/\/login(\?|$)/);
 });
 
-test('guest is redirected from an inspection detail to /login', async ({ page }) => {
-  await page.goto('/inspections/00000000-0000-0000-0000-000000000000');
-  await expect(page).toHaveURL(/\/login(\?|$)/);
-});
-
 test('admin sees the inspections list', async ({ page }) => {
   test.skip(!email || !password, 'Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD to run.');
   await login(page);
@@ -43,6 +38,45 @@ test('admin can open an inspection detail with timeline and evidence', async ({ 
   await page.goto('/inspections');
   const firstLink = page.getByTestId(/^inspection-link-/).first();
   await firstLink.click();
-  await expect(page.getByTestId('inspection-ref')).toBeVisible();
-  await expect(page.getByTestId('event-timeline')).toBeVisible();
+  // Detail opens in a drawer on the list route.
+  await expect(page).toHaveURL(/\/inspections\?.*inspection=/);
+  const drawer = page.getByTestId('inspection-drawer');
+  await expect(drawer.getByTestId('inspection-ref')).toHaveText(/^INS-/);
+  await expect(drawer.getByTestId('event-timeline')).toBeVisible();
+  await drawer.getByTestId('tab-review').click();
+  await expect(drawer.getByTestId('comment-list')).toBeVisible();
+  await drawer.getByTestId('drawer-close').click();
+  await expect(page).not.toHaveURL(/inspection=/);
+});
+
+test('clicking a row opens the drawer and the status tabs filter the list', async ({ page }) => {
+  test.skip(!email || !password, 'Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD to run.');
+  await login(page);
+  await page.goto('/inspections');
+  await page.getByTestId('tab-completed').click();
+  await expect(page).toHaveURL(/status=completed/);
+  await page.getByTestId('tab-all').click();
+  await expect(page).not.toHaveURL(/status=/);
+  await page.locator('tbody tr').first().click();
+  await expect(page.getByTestId('inspection-drawer')).toBeVisible();
+});
+
+test('admin can search live, filter by status and apply sheet filters', async ({ page }) => {
+  test.skip(!email || !password, 'Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD to run.');
+  await login(page);
+  await page.goto('/inspections');
+  // Search applies as you type (debounced), no submit button.
+  await page.getByTestId('inspection-search').fill('INS');
+  await expect(page).toHaveURL(/[?&]q=INS/);
+  await page.getByTestId('inspection-status').click();
+  await page.getByRole('option', { name: 'Completed' }).click();
+  await expect(page).toHaveURL(/status=completed/);
+  await expect(page).toHaveURL(/q=INS/);
+  await page.getByTestId('filter-toggle').click();
+  await page.getByTestId('inspection-department').click();
+  await page.getByRole('option').nth(1).click();
+  await page.getByTestId('inspection-apply').click();
+  await expect(page).toHaveURL(/department=/);
+  await expect(page).toHaveURL(/status=completed/);
+  await expect(page.getByTestId('filter-count')).toHaveText('1');
 });

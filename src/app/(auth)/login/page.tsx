@@ -1,3 +1,4 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoginForm } from './LoginForm';
 
 /**
@@ -6,15 +7,17 @@ import { LoginForm } from './LoginForm';
 export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">AUDA FieldTrack</h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Administration portal — sign in
-          </p>
-        </div>
-        <LoginForm />
-      </div>
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center">
+          <CardTitle>
+            <h1 className="text-2xl font-semibold tracking-tight">AUDA FieldTrack</h1>
+          </CardTitle>
+          <CardDescription>Administration portal — sign in</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <LoginForm />
+        </CardContent>
+      </Card>
     </main>
   );
 }

@@ -57,7 +57,8 @@ test('admin can edit a user role inline', async ({ page }) => {
   await page.getByTestId(`edit-${userId}`).click();
   const roleSelect = page.getByTestId(`role-select-${userId}`);
   await expect(roleSelect).toBeVisible();
-  await roleSelect.selectOption('supervisor');
+  await roleSelect.click();
+  await page.getByRole('option', { name: 'Supervisor' }).click();
   await page.getByTestId(`save-${userId}`).click();
-  await expect(page.getByTestId('toast').filter({ hasText: /role updated/i })).toBeVisible();
+  await expect(page.locator('[data-sonner-toast]').filter({ hasText: /role updated/i })).toBeVisible();
 });

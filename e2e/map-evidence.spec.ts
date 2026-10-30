@@ -27,6 +27,7 @@ test('inspection detail renders an OSM map with tiles', async ({ page }) => {
   // Open the inspection that has evidence/location.
   await page.getByRole('link', { name: 'INS-2026-000002' }).click();
   await expect(page.getByTestId('inspection-ref')).toHaveText('INS-2026-000002');
+  await page.getByTestId('view-map').click();
 
   // Leaflet renders an OSM tile layer; at least one tile <img> from tile.openstreetmap.org.
   const tile = page.locator('img.leaflet-tile').first();
@@ -39,6 +40,7 @@ test('inspection evidence photo loads from a signed URL', async ({ page }) => {
   await page.goto('/inspections');
   await page.getByRole('link', { name: 'INS-2026-000002' }).click();
 
+  await page.getByTestId('tab-evidence').click();
   await expect(page.getByTestId('evidence-list')).toBeVisible();
   const img = page.getByTestId(/^evidence-img-/).first();
   await expect(img).toBeVisible();

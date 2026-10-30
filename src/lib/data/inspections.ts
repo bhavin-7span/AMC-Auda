@@ -167,10 +167,21 @@ export interface AssignableStaff {
   employee_id: string;
 }
 
+/**
+ * get_assignable_staff rows carry the user's id as `id` (not `user_id`); normalize here so
+ * every select posts a real user id instead of falling back to the option label.
+ */
 export async function getAssignableStaff(supabase: Client): Promise<AssignableStaff[]> {
   const { data, error } = await supabase.rpc('get_assignable_staff');
   if (error) throw error;
-  return (data as unknown as AssignableStaff[]) ?? [];
+  const rows = (data as unknown as (Partial<AssignableStaff> & { id?: string })[]) ?? [];
+  return rows
+    .map((r) => ({
+      user_id: r.user_id ?? r.id ?? '',
+      full_name: r.full_name ?? '',
+      employee_id: r.employee_id ?? '',
+    }))
+    .filter((r) => r.user_id);
 }
 
 export interface TeamLocation {
@@ -181,10 +192,12 @@ export interface TeamLocation {
   recorded_at: string;
 }
 
+/** get_team_locations returns `{ members: TeamLocation[], server_time }` (role-scoped). */
 export async function getTeamLocations(supabase: Client): Promise<TeamLocation[]> {
   const { data, error } = await supabase.rpc('get_team_locations');
   if (error) throw error;
-  return (data as unknown as TeamLocation[]) ?? [];
+  const members = (data as unknown as { members?: TeamLocation[] } | null)?.members;
+  return Array.isArray(members) ? members : [];
 }
 
 export interface TravelReport {
@@ -210,4 +223,43 @@ export async function getTravelReport(
   });
   if (error) throw error;
   return data as unknown as TravelReport;
+}
+
+export interface NewInspection {
+  title: string;
+  departmentId: string;
+  typeId: string;
+  priority: string;
+  locationName: string;
+  latitude: number;
+  longitude: number;
+  /** ISO timestamp. */
+  scheduledAt: string;
+}
+
+/**
+ * Create an inspection via save_inspection (the same RPC the mobile app uses). The client
+ * supplies the id and an idempotency op_id; the RPC validates the payload, department and
+ * type, and authorizes the caller.
+ */
+export async function createInspection(supabase: Client, input: NewInspection): Promise<{ id: string; ref_no: string | null }> {
+  const id = crypto.randomUUID();
+  const { data, error } = await supabase.rpc('save_inspection', {
+    p: {
+      id,
+      op_id: crypto.randomUUID(),
+      title: input.title,
+      department_id: input.departmentId,
+      inspection_type_id: input.typeId,
+      priority: input.priority,
+      location_name: input.locationName,
+      latitude: input.latitude,
+      longitude: input.longitude,
+      scheduled_at: input.scheduledAt,
+      form_data: {},
+    },
+  });
+  if (error) throw error;
+  const row = (data ?? {}) as { id?: string; ref_no?: string; inspection?: { id?: string; ref_no?: string } };
+  return { id: row.id ?? row.inspection?.id ?? id, ref_no: row.ref_no ?? row.inspection?.ref_no ?? null };
 }
