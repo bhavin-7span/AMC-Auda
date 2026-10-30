@@ -26,6 +26,7 @@ export function MapContainer({
   label = 'Map',
   points,
   route = false,
+  fitAll = false,
   onPick,
   children,
 }: {
@@ -33,6 +34,8 @@ export function MapContainer({
   label?: string;
   points?: MapPoint[];
   route?: boolean;
+  /** Frame every point instead of centring on the first one. */
+  fitAll?: boolean;
   /** Location-picker mode: the map always renders and reports clicks. */
   onPick?: (lat: number, lon: number) => void;
   children?: ReactNode;
@@ -61,7 +64,9 @@ export function MapContainer({
     Array.isArray(plotted) && plotted.some((p) => Number.isFinite(p.lat) && Number.isFinite(p.lon));
 
   if (hasPoints || onPick) {
-    return <LeafletMap points={plotted ?? []} route={route} height={height} label={label} onPick={onPick} />;
+    return (
+      <LeafletMap points={plotted ?? []} route={route} fitAll={fitAll} height={height} label={label} onPick={onPick} />
+    );
   }
 
   return (
