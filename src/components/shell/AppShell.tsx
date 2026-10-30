@@ -75,7 +75,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Sidebar sections={sections} />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-background">
         <Topbar email={email} roleLabel={roleLabel} />
-        <main className="flex flex-1 flex-col overflow-y-auto">
+        {/* relative: absolutely positioned descendants (sr-only text, chart tooltips) must
+            resolve against the scroller, or they stretch the document and add a window scrollbar. */}
+        <main className="relative flex flex-1 flex-col overflow-y-auto">
           <div className="flex-1 px-5 pt-6 pb-6 md:px-7">
             <Suspense fallback={<PageHeader pathname={null} sections={sections} loaded={loaded} />}>
               <RoutedPageHeader sections={sections} loaded={loaded} />

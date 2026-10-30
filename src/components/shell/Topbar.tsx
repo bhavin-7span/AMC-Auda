@@ -1,11 +1,16 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
-import { ChevronDown, ChevronRight, Clock, LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
+import { createPortal } from "react-dom";
+import { ChevronDown, ChevronRight, Clock, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
@@ -13,30 +18,35 @@ import {
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { pageTitleFor, type NavSection } from '@/lib/nav/navigation';
-import { NAV_ICONS } from './nav-icons';
+} from "@/components/ui/popover";
+import { pageTitleFor, type NavSection } from "@/lib/nav/navigation";
+import { NAV_ICONS } from "./nav-icons";
 
 function istParts(now: Date) {
   const hour = Number(
-    now.toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      hour: 'numeric',
+    now.toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      hour: "numeric",
       hour12: false,
     }),
   );
   return {
-    greeting: hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening',
-    date: now.toLocaleDateString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
+    greeting:
+      hour < 12
+        ? "Good morning"
+        : hour < 17
+          ? "Good afternoon"
+          : "Good evening",
+    date: now.toLocaleDateString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      weekday: "long",
+      day: "numeric",
+      month: "long",
     }),
-    time: now.toLocaleTimeString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      hour: '2-digit',
-      minute: '2-digit',
+    time: now.toLocaleTimeString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      hour: "2-digit",
+      minute: "2-digit",
     }),
   };
 }
@@ -53,21 +63,28 @@ function useIstClock() {
   return parts;
 }
 
-const roleText = (role: string) => role.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
+const roleText = (role: string) =>
+  role.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
 
 /**
  * Top bar for the Admin Panel shell: greeting and IST clock on the left/centre, the
  * signed-in account (with sign-out) on the right.
  */
-export function Topbar({ email, roleLabel }: { email: string | null; roleLabel: string }) {
+export function Topbar({
+  email,
+  roleLabel,
+}: {
+  email: string | null;
+  roleLabel: string;
+}) {
   const clock = useIstClock();
 
   return (
     <header className="flex h-17 shrink-0 items-center justify-between gap-4 border-b border-border bg-card px-5 md:px-7">
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold text-foreground">
-          {clock?.greeting ?? 'Welcome'}
-          {email ? `, ${roleText(roleLabel)}` : ''}
+          {clock?.greeting ?? "Welcome"}
+          {email ? `, ${roleText(roleLabel)}` : ""}
         </p>
         <p className="truncate text-xs text-muted-foreground">
           Operational overview for Ahmedabad field activities.
@@ -75,17 +92,17 @@ export function Topbar({ email, roleLabel }: { email: string | null; roleLabel: 
       </div>
 
       <div className="flex shrink-0 items-center gap-4">
-        {clock && (
-          <span className="hidden items-center gap-1.5 text-xs text-muted-foreground lg:flex">
-            <Clock className="size-3.5" />
-            {clock.date} · {clock.time} IST
-          </span>
-        )}
         <div data-testid="account-area">
           {email ? (
             <Popover>
               <PopoverTrigger
-                render={<Button variant="ghost" className="h-11 gap-2.5 px-2" aria-label="Account menu" />}
+                render={
+                  <Button
+                    variant="ghost"
+                    className="h-11 gap-2.5 px-2"
+                    aria-label="Account menu"
+                  />
+                }
               >
                 <span
                   aria-hidden
@@ -94,10 +111,16 @@ export function Topbar({ email, roleLabel }: { email: string | null; roleLabel: 
                   {email.slice(0, 2)}
                 </span>
                 <span className="hidden min-w-0 text-left leading-tight sm:block">
-                  <span className="block max-w-48 truncate text-sm font-semibold" data-testid="account-email">
+                  <span
+                    className="block max-w-48 truncate text-sm font-semibold"
+                    data-testid="account-email"
+                  >
                     {email}
                   </span>
-                  <span className="block text-xs font-normal text-muted-foreground" data-testid="role-label">
+                  <span
+                    className="block text-xs font-normal text-muted-foreground"
+                    data-testid="role-label"
+                  >
                     {roleText(roleLabel)}
                   </span>
                 </span>
@@ -106,17 +129,27 @@ export function Topbar({ email, roleLabel }: { email: string | null; roleLabel: 
               <PopoverContent align="end" className="w-64 gap-3 p-3">
                 <PopoverHeader>
                   <PopoverTitle className="truncate">{email}</PopoverTitle>
-                  <PopoverDescription>Role: {roleText(roleLabel)}</PopoverDescription>
+                  <PopoverDescription>
+                    Role: {roleText(roleLabel)}
+                  </PopoverDescription>
                 </PopoverHeader>
                 <form action="/logout" method="post">
-                  <Button type="submit" variant="outline" className="w-full" data-testid="logout-button">
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    className="w-full"
+                    data-testid="logout-button"
+                  >
                     <LogOut /> Sign out
                   </Button>
                 </form>
               </PopoverContent>
             </Popover>
           ) : (
-            <span className="text-xs text-muted-foreground" data-testid="role-label">
+            <span
+              className="text-xs text-muted-foreground"
+              data-testid="role-label"
+            >
               Role: {roleText(roleLabel)}
             </span>
           )}
@@ -132,7 +165,10 @@ export function Topbar({ email, roleLabel }: { email: string | null; roleLabel: 
  * dynamic routes (/attendance/<userId>), so AppShell renders this inside Suspense with a
  * pathname-less PageHeader as the fallback.
  */
-export function RoutedPageHeader(props: { sections: NavSection[]; loaded: boolean }) {
+export function RoutedPageHeader(props: {
+  sections: NavSection[];
+  loaded: boolean;
+}) {
   return <PageHeader pathname={usePathname()} {...props} />;
 }
 
@@ -146,8 +182,11 @@ export function PageHeader({
   loaded: boolean;
 }) {
   if (pathname == null) return null;
-  const match = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
-  const section = sections.find((s) => s.items.some((item) => match(item.href)));
+  const match = (href: string) =>
+    pathname === href || pathname.startsWith(`${href}/`);
+  const section = sections.find((s) =>
+    s.items.some((item) => match(item.href)),
+  );
   const item = section?.items.find((i) => match(i.href));
   // Once the role is known, routes the caller's nav does not expose (e.g. a disabled
   // module that 404s) get no header.
@@ -159,7 +198,10 @@ export function PageHeader({
 
   return (
     <div className="mb-6 space-y-3">
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <nav
+        aria-label="Breadcrumb"
+        className="flex items-center gap-1.5 text-xs text-muted-foreground"
+      >
         <span>AUDA FieldTrack</span>
         <ChevronRight className="size-3" />
         {item && isChild ? (
@@ -169,7 +211,7 @@ export function PageHeader({
             </Link>
             <ChevronRight className="size-3" />
             <span className="font-medium text-foreground">
-              {page.title === item.label ? 'Details' : page.title}
+              {page.title === item.label ? "Details" : page.title}
             </span>
           </>
         ) : (
@@ -190,15 +232,20 @@ export function PageHeader({
           >
             {page.title}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{page.description}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {page.description}
+          </p>
         </div>
-        <div id={PAGE_ACTIONS_ID} className="flex flex-wrap items-center gap-2 empty:hidden" />
+        <div
+          id={PAGE_ACTIONS_ID}
+          className="flex flex-wrap items-center gap-2 empty:hidden"
+        />
       </div>
     </div>
   );
 }
 
-const PAGE_ACTIONS_ID = 'page-header-actions';
+const PAGE_ACTIONS_ID = "page-header-actions";
 const noopSubscribe = () => () => {};
 
 /**

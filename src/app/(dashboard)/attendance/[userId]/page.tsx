@@ -149,7 +149,7 @@ export default async function EmployeeAttendancePage({
             ))}
           </div>
 
-          <div className="space-y-3" data-testid="employee-days">
+          <div className="space-y-6" data-testid="employee-days">
             {dates.map((date) => {
               const day = byDate.get(date);
               const status = STATUS_BADGE[day?.status ?? 'absent'];
