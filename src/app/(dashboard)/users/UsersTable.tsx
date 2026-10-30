@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectOptions, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useUrlFilters } from '@/hooks/use-url-filters';
 import { setUserRoleAction } from './actions';
@@ -123,11 +123,7 @@ export function UsersTable({
               <SelectValue />
             </SelectTrigger>
             <SelectContent alignItemWithTrigger={false}>
-              {deptItems.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
+              <SelectOptions items={deptItems} />
             </SelectContent>
           </Select>
         </Field>

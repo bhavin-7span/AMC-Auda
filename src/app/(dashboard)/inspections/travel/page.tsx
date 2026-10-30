@@ -66,7 +66,7 @@ export default async function TravelPage({
               <div className="grid gap-3 sm:grid-cols-2">
                 {[
                   { title: 'Distance travelled', value: `${(report.distance_m / 1000).toFixed(2)} km` },
-                  { title: 'Location points', value: report.count },
+                  // { title: 'Location points', value: report.count },
                 ].map((s) => (
                   <Card key={s.title} size="sm" data-testid="widget">
                     <CardHeader>
@@ -89,7 +89,10 @@ export default async function TravelPage({
                   id: String(i),
                   lat: p.lat,
                   lon: p.lon,
-                  label: new Date(p.at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+                  // Only the first and last points are pinned on a route map.
+                  label: `${i === 0 ? 'Check in' : 'Check out'} — ${new Date(p.at).toLocaleString('en-IN', {
+                    timeZone: 'Asia/Kolkata',
+                  })}`,
                 }))}
               />
             </div>

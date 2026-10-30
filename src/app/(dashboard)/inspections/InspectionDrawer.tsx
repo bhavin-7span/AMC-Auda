@@ -34,7 +34,7 @@ import {
 import {
   Select,
   SelectContent,
-  SelectItem,
+  SelectOptions,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -386,11 +386,7 @@ export function InspectionDrawer({
                                   <SelectValue placeholder="Select field officer" />
                                 </SelectTrigger>
                                 <SelectContent alignItemWithTrigger={false}>
-                                  {staffItems.map((o) => (
-                                    <SelectItem key={o.value} value={o.value}>
-                                      {o.label}
-                                    </SelectItem>
-                                  ))}
+                                  <SelectOptions items={staffItems} />
                                 </SelectContent>
                               </Select>
                             </Field>

@@ -129,18 +129,29 @@ export default function LeafletMap({
         { color: '#2563EB' },
       ).addTo(layer);
     }
-    for (const p of valid) {
-      const marker = L.marker([p.lat, p.lon], { icon }).addTo(layer);
+    // A route only pins its two ends (start green, end red); the line shows the path.
+    const pinned = route && valid.length > 1 ? [valid[0], valid[valid.length - 1]] : valid;
+    pinned.forEach((p, i) => {
+      const marker =
+        pinned !== valid
+          ? L.circleMarker([p.lat, p.lon], {
+              radius: 9,
+              weight: 3,
+              color: '#ffffff',
+              fillColor: i === 0 ? '#16a34a' : '#dc2626',
+              fillOpacity: 1,
+            }).addTo(layer)
+          : L.marker([p.lat, p.lon], { icon }).addTo(layer);
       if (p.label) {
         // Text node, not HTML: labels come from user-entered names.
         const content = document.createElement('span');
         content.textContent = p.label;
         marker.bindPopup(content);
       }
-    }
-    // Centre on the first point. A picker keeps the user's view once centred, so
-    // moving the marker does not jump the map.
-    if (fitAll && valid.length > 1) {
+    });
+    // Frame everything for routes / fitAll; otherwise centre on the first point. A
+    // picker keeps the user's view once centred, so moving the marker does not jump.
+    if ((fitAll || route) && valid.length > 1) {
       map.fitBounds(L.latLngBounds(valid.map((p) => [p.lat, p.lon] as L.LatLngTuple)), {
         padding: [32, 32],
         maxZoom: 17,

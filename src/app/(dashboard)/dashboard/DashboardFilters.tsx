@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectOptions, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -59,11 +59,7 @@ export function DashboardFilters({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent alignItemWithTrigger={false}>
-                {deptItems.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
+                <SelectOptions items={deptItems} />
               </SelectContent>
             </Select>
           </div>

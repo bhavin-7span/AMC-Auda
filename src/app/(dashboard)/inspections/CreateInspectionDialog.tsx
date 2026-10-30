@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectOptions, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
@@ -88,18 +88,14 @@ function OptionSelect({
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent alignItemWithTrigger={false}>
-        {options.map((o) => (
-          <SelectItem key={o.value} value={o.value}>
-            {o.label}
-          </SelectItem>
-        ))}
+        <SelectOptions items={options} />
       </SelectContent>
     </Select>
   );
 }
 
 /**
- * Two-step "Create inspection" dialog: inspection details (type, zone, priority, site and
+ * Two-step "Create inspection" dialog: inspection details (type, department, priority, site and
  * instructions), then assignment (officer and schedule). Masters load when the dialog
  * opens; on success the new inspection opens.
  */
@@ -110,7 +106,7 @@ export function CreateInspectionDialog({ triggerLabel = 'New inspection' }: { tr
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [error, setError] = useState<string | null>(null);
   const [types, setTypes] = useState<Option[]>([]);
-  const [zones, setZones] = useState<Option[]>([]);
+  const [departments, setDepartments] = useState<Option[]>([]);
   const [officers, setOfficers] = useState<Option[]>([]);
   const [loading, setLoading] = useState(false);
   const [pending, startSaving] = useTransition();
@@ -144,7 +140,7 @@ export function CreateInspectionDialog({ triggerLabel = 'New inspection' }: { tr
         };
         startTransition(() => {
           setTypes((m.types ?? []).filter((t) => t.is_active !== false).map((t) => ({ value: t.id, label: t.name })));
-          setZones(
+          setDepartments(
             (m.departments ?? []).filter((d) => d.is_active !== false).map((d) => ({ value: d.id, label: d.name })),
           );
           setOfficers(
@@ -168,7 +164,7 @@ export function CreateInspectionDialog({ triggerLabel = 'New inspection' }: { tr
   }
 
   function next() {
-    if (!draft.typeId || !draft.departmentId || !draft.priority) return setError('Choose an inspection type, zone and priority.');
+    if (!draft.typeId || !draft.departmentId || !draft.priority) return setError('Choose an inspection type, department and priority.');
     if (!draft.siteAddress.trim()) return setError('Enter the site address.');
     if (draft.latitude == null) return setError('Click the map to mark the site location.');
     setError(null);
@@ -251,12 +247,12 @@ export function CreateInspectionDialog({ triggerLabel = 'New inspection' }: { tr
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field>
-                  <FieldLabel htmlFor="ci-zone">Zone *</FieldLabel>
+                  <FieldLabel htmlFor="ci-zone">Department *</FieldLabel>
                   <OptionSelect
                     id="ci-zone"
                     value={draft.departmentId}
-                    options={zones}
-                    placeholder="Select zone"
+                    options={departments}
+                    placeholder="Select department"
                     onChange={(v) => set('departmentId', v)}
                   />
                 </Field>
