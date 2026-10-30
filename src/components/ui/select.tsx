@@ -88,7 +88,7 @@ function SelectContent({
         <SelectPrimitive.Popup
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger}
-          className={cn("relative isolate z-50 max-h-(--available-height) w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className )}
+          className={cn("relative isolate z-50 max-h-[min(var(--available-height),18rem)] w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className )}
           {...props}
         >
           <SelectScrollUpButton />
@@ -138,6 +138,60 @@ function SelectItem({
         <CheckIcon className="pointer-events-none" />
       </SelectPrimitive.ItemIndicator>
     </SelectPrimitive.Item>
+  )
+}
+
+/**
+ * Renders `items` as options a page at a time: the first `pageSize` up front, the next
+ * page each time the list is scrolled to its end. Keeps long master lists (departments,
+ * staff) short when the popup opens. The Select root's `items` still resolves the label
+ * of a selected value that has not been rendered yet. The popup unmounts on close, so
+ * every open starts again from the first page.
+ */
+function SelectOptions({
+  items,
+  pageSize = 10,
+}: {
+  items: readonly { value: string; label: React.ReactNode }[]
+  pageSize?: number
+}) {
+  const [count, setCount] = React.useState(pageSize)
+  const sentinelRef = React.useRef<HTMLDivElement>(null)
+  const hasMore = count < items.length
+
+  React.useEffect(() => {
+    const node = sentinelRef.current
+    if (!node || !hasMore) return
+    // A null root still clips by the popup's own scroll box (capped at ~10 rows), so
+    // this fires only once the list is scrolled all the way down to the sentinel.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setCount((c) => c + pageSize)
+      },
+      { threshold: 1 }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [hasMore, pageSize, count])
+
+  return (
+    <>
+      {items.slice(0, count).map((o) => (
+        <SelectItem key={o.value} value={o.value}>
+          {o.label}
+        </SelectItem>
+      ))}
+      {hasMore && (
+        <div
+          ref={sentinelRef}
+          data-slot="select-more"
+          aria-hidden
+          className="px-1.5 py-1 text-center text-xs text-muted-foreground"
+        >
+          Loading more…
+        </div>
+      )}
+    </>
   )
 }
 
@@ -198,6 +252,7 @@ export {
   SelectGroup,
   SelectItem,
   SelectLabel,
+  SelectOptions,
   SelectPortalContainer,
   SelectScrollDownButton,
   SelectScrollUpButton,

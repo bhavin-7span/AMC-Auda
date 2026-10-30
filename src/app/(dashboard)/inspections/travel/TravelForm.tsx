@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectOptions, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { AssignableStaff } from '@/lib/data/inspections';
 
 /**
@@ -43,11 +43,7 @@ export function TravelForm({
                 <SelectValue placeholder="Select staff…" />
               </SelectTrigger>
               <SelectContent alignItemWithTrigger={false}>
-                {staffItems.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
+                <SelectOptions items={staffItems} />
               </SelectContent>
             </Select>
           </Field>

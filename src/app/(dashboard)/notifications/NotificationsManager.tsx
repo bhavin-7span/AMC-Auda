@@ -17,7 +17,7 @@ import {
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectOptions, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { upsertTemplateAction, upsertRuleAction } from './actions';
@@ -39,11 +39,7 @@ function selectField(id: string, label: string, name: string, items: { value: st
           <SelectValue />
         </SelectTrigger>
         <SelectContent alignItemWithTrigger={false}>
-          {items.map((o) => (
-            <SelectItem key={o.value} value={o.value}>
-              {o.label}
-            </SelectItem>
-          ))}
+          <SelectOptions items={items} />
         </SelectContent>
       </Select>
     </Field>

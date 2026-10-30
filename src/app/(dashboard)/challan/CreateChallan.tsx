@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectOptions, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { saveChallanAction } from './actions';
 import type { ChallanTypeOption } from '@/lib/data/challans';
 
@@ -111,11 +111,7 @@ export function CreateChallan({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent alignItemWithTrigger={false}>
-                  {typeItems.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
+                  <SelectOptions items={typeItems} />
                 </SelectContent>
               </Select>
             </Field>
@@ -131,11 +127,7 @@ export function CreateChallan({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent alignItemWithTrigger={false}>
-                  {deptItems.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
+                  <SelectOptions items={deptItems} />
                 </SelectContent>
               </Select>
             </Field>
